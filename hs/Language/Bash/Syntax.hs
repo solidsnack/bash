@@ -3,7 +3,7 @@
            , StandaloneDeriving
   #-}
 
-module Language.Bash.Program where
+module Language.Bash.Syntax where
 
 import Prelude hiding (all)
 import Data.Char
