@@ -37,22 +37,28 @@ data Statement
   | DictDecl        Identifier          [(Expression, Expression)]
   | DictUpdate      Identifier          Expression          Expression
   | DictAssign      Identifier          [(Expression, Expression)]
-deriving instance Eq Term
-deriving instance Ord Term
-deriving instance Show Term
+deriving instance Eq Statement
+deriving instance Ord Statement
+deriving instance Show Statement
 
 
-cmd                         ::  ByteString -> [ByteString] -> Term
-cmd                          =  SimpleCommand
-
+cmd                         ::  ByteString -> [ByteString] -> Statement
+cmd argv0 argv               =  SimpleCommand (e argv0) (fmap e argv)
+ where
+  e                          =  Literal . Esc.bash
 
 data Expression              =  Literal Esc.Bash
                              |  ReadVar Identifier
                              |  ReadArray Identifier Expression
                              |  IndirectExpansion Identifier
                              |  Concat Expression Expression
-                             |  Exec Term
+                             |  Exec Statement
 -- Ignore                    |  crazy patterns
+deriving instance Eq Expression
+deriving instance Ord Expression
+deriving instance Show Expression
+instance IsString Expression where
+  fromString                 =  Literal . Esc.bash . fromString
 
 
 newtype Identifier           =  Identifier ByteString
