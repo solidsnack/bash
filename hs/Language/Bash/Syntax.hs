@@ -34,7 +34,7 @@ data Statement
   | Until           Statement           Statement
   | BraceBrace      ConditionalExpression
   | VarAssign       Identifier          Expression
-  | DictDecl        Identifier          [(Expression, Expression)]
+  | DictDecl        Identifier          [(Identifier, Expression)]
   | DictUpdate      Identifier          Expression          Expression
   | DictAssign      Identifier          [(Expression, Expression)]
 deriving instance Eq Statement
@@ -49,11 +49,19 @@ cmd argv0 argv               =  SimpleCommand (e argv0) (fmap e argv)
 
 data Expression              =  Literal Esc.Bash
                              |  ReadVar Identifier
+                             |  ReadVarSafe Identifier
                              |  ReadArray Identifier Expression
-                             |  IndirectExpansion Identifier
+                             |  ReadArraySafe Identifier Expression
+                             |  ARGVElements
+                             |  ARGVLength
+                             |  Elements Identifier
+                             |  Length Identifier
+                             |  ArrayLength Identifier
                              |  Concat Expression Expression
-                             |  Exec Statement
--- Ignore                    |  crazy patterns
+-- TODO                      |  Exec Statement
+-- TODO                      |  IndirectExpansion Identifier
+-- TODO                      |  Substring, Replacement, &c.
+-- TODO                      |  ProcessSubstituion
 deriving instance Eq Expression
 deriving instance Ord Expression
 deriving instance Show Expression
@@ -77,7 +85,6 @@ identifier bytes             =  do
  where
   okayTail c                 =  (isAlphaNum c || c == '_') && isAscii c
   okayHead c                 =  (isAlpha c || c == '_') && isAscii c
-
 
 data ConditionalExpression
   = File_a          Expression
