@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings
-           , StandaloneDeriving
            , RecordWildCards
            , NamedFieldPuns
            , NoMonomorphismRestriction
@@ -27,10 +26,11 @@ data PPState                 =  PPState { indents :: [Word]
                                         , columns :: Word
                                         , string :: Builder }
 
+
 {-| Pretty printer state starting on a new line indented to the given column.
  -}
-colPPState                  ::  Word -> PPState
-colPPState w                 =  PPState [w] True 0 Builder.empty
+nlCol                       ::  Word -> PPState
+nlCol w                      =  PPState [w] True 0 Builder.empty
 
 
 {-| Operations we can perform while pretty printing:
