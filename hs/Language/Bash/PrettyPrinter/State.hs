@@ -11,9 +11,10 @@ module Language.Bash.PrettyPrinter.State where
 import qualified Data.List as List
 import Data.Monoid
 import Prelude hiding (concat, length, replicate)
-import Data.Binary.Builder (Builder)
+import Data.Binary.Builder (Builder, toLazyByteString)
 import qualified Data.Binary.Builder as Builder
 import Data.ByteString.Char8
+import Data.ByteString.Lazy (toChunks)
 import Data.Word
 import Control.Monad.State.Strict
 
@@ -26,6 +27,11 @@ data PPState                 =  PPState { indents :: [Word]
                                         , columns :: Word
                                         , string :: Builder }
 
+render                      ::  PPState -> State PPState () -> Builder
+render init computation      =  string $ execState computation init
+
+renderBytes                 ::  PPState -> State PPState () -> ByteString
+renderBytes = ((concat . toChunks . toLazyByteString) .) . render
 
 {-| Pretty printer state starting on a new line indented to the given column.
  -}
@@ -82,8 +88,6 @@ inword                      ::  ByteString -> State PPState ()
 inword b                     =  opM [Word b, Indent 2, Newline]
 outword                     ::  ByteString -> State PPState ()
 outword b                    =  opM [Newline, Outdent, Word b]
-arrayset                    ::  (ByteString, ByteString) -> State PPState ()
-arrayset (key, val) = opM [Word (concat ["[", key, "]=", val]), Newline]
 
 breakline                   ::  ByteString -> State PPState ()
 breakline b                  =  do
