@@ -50,6 +50,8 @@ instance PP Expression where
 bytes                       ::  (PP t) => t -> ByteString
 bytes                        =  renderBytes (nlCol 0) . pp
 
+bytes_state                  =  renderBytes (nlCol 0)
+
 {-  
 nl                          ::  State PPState ()
 hang                        ::  ByteString -> State PPState ()
@@ -61,45 +63,53 @@ outword                     ::  ByteString -> State PPState ()
 arrayset                    ::  (ByteString, ByteString) -> State PPState ()
 breakline                   ::  ByteString -> State PPState ()
  -}
-ops                         ::  Statement -> State PPState ()
-ops term                     =  case term of
-  SimpleCommand cmd args    ->  do hang (bytes cmd)
+instance PP Statement where
+  pp term                    =  case term of
+    SimpleCommand cmd args  ->  do hang (bytes cmd)
                                    mapM_ (breakline . bytes) args
                                    outdent
-  NoOp                      ->  word ": 'Do nothing.'"
-  Bang t                    ->  hang "!"  >> ops t     >> outdent
-  AndAnd t t'               ->  ops t     >> word "&&" >> nl        >> ops t'
-  OrOr t t'                 ->  ops t     >> word "||" >> nl        >> ops t'
-  Pipe t t'                 ->  ops t     >> word "|"  >> nl        >> ops t'
-  Sequence t t'             ->  ops t                  >> nl        >> ops t'
-  Background t t'           ->  ops t     >> word "&"  >> nl        >> ops t'
-  Group t                   ->  hang "{"  >> ops t     >> word ";}" >> outdent
-  Subshell t                ->  hang "("  >> ops t     >> word ")"  >> outdent
-  Function ident t          ->  do wordcat ["function ", bytes ident]
-                                   inword " {" >> ops t >> outword "}"
-  IfThen t t'               ->  do hang "if" >> ops t >> outdent >> nl
-                                   inword "then" >> ops t' >> outword "fi"
-  IfThenElse t t' t''       ->  do hang "if" >> ops t >> outdent >> nl
-                                   inword "then"      >> ops t'  >> outdent
-                                   inword "else"      >> ops t''
+    NoOp                    ->  word ": 'Do nothing.'"
+    Bang t                  ->  hang "!"  >> pp t      >> outdent
+    AndAnd t t'             ->  pp t      >> word "&&" >> nl        >> pp t'
+    OrOr t t'               ->  pp t      >> word "||" >> nl        >> pp t'
+    Pipe t t'               ->  pp t      >> word "|"  >> nl        >> pp t'
+    Sequence t t'           ->  pp t                   >> nl        >> pp t'
+    Background t t'         ->  pp t      >> word "&"  >> nl        >> pp t'
+    Group t                 ->  hang "{"  >> pp t      >> word ";}" >> outdent
+    Subshell t              ->  hang "("  >> pp t      >> word ")"  >> outdent
+    Function ident t        ->  do wordcat ["function ", bytes ident]
+                                   inword " {" >> pp t >> outword "}"
+    IfThen t t'             ->  do hang "if" >> pp t   >> outdent   >> nl
+                                   inword "then" >> pp t' >> outword "fi"
+    IfThenElse t t' t''     ->  do hang "if" >> pp t   >> outdent   >> nl
+                                   inword "then"       >> pp t'     >> outdent
+                                   inword "else"       >> pp t''
                                    outword "fi"
-  For var vals t            ->  do hang (concat ["for ", bytes var, " in"])
+    For var vals t          ->  do hang (concat ["for ", bytes var, " in"])
                                    mapM_ (breakline . bytes) vals 
                                    outdent >> nl
-                                   inword "do" >> ops t >> outword "done"
-  BraceBrace _              ->  error "[[ ]]"
-  VarAssign var val         ->  pp var >> word "=" >> pp val
-  DictDecl var pairs        ->  do wordcat ["declare -A ", bytes var, "=("]
+                                   inword "do" >> pp t >> outword "done"
+    Case expr cases         ->  do word "case" >> pp expr >> inword "in"
+                                   mapM_ case_clause cases
+                                   outdent >> nl
+                                   outword "esac"
+    --While           Statement           Statement
+    --Until           Statement           Statement
+    BraceBrace _            ->  error "[[ ]]"
+    VarAssign var val       ->  pp var >> word "=" >> pp val
+    DictDecl var pairs      ->  do wordcat ["declare -A ", bytes var, "=("]
                                    nl >> mapM_ arrayset pairs
                                    nl >> word ")"
-  DictUpdate var key val    ->  do pp var >> word "["
+    DictUpdate var key val  ->  do pp var >> word "["
                                    pp key >> word "]="
                                    pp val
-  DictAssign var pairs      ->  do pp var >> word "=(" >> nl
+    DictAssign var pairs    ->  do pp var >> word "=(" >> nl
                                    mapM_ arrayset pairs >> word ")"
 
-arrayset                    ::  (PP s, PP t) => (s, t) -> State PPState ()
 arrayset (key, val) = word "[" >> pp key >> word "]=" >> pp val >> nl
+
+case_clause (ptrn, stmt)     =  do hang (bytes_state (pp ptrn >> word ")  "))
+                                   pp stmt >> word ";;" >> nl
 
 {-
 
