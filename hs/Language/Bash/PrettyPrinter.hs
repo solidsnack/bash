@@ -3,6 +3,7 @@
            , RecordWildCards
            , NamedFieldPuns
            , NoMonomorphismRestriction
+           , GeneralizedNewtypeDeriving
   #-}
 
 {-| Pretty printer for Bash. The pretty printer generates a builder which we
