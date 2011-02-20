@@ -83,6 +83,7 @@ instance PP Statement where
                                    inword "then" >> pp t' >> outword "fi"
     IfThenElse t t' t''     ->  do hang "if" >> pp t   >> outdent   >> nl
                                    inword "then"       >> pp t'     >> outdent
+                                   nl
                                    inword "else"       >> pp t''
                                    outword "fi"
     For var vals t          ->  do hang (concat ["for ", bytes var, " in"])
@@ -91,10 +92,11 @@ instance PP Statement where
                                    inword "do" >> pp t >> outword "done"
     Case expr cases         ->  do word "case" >> pp expr >> inword "in"
                                    mapM_ case_clause cases
-                                   outdent >> nl
                                    outword "esac"
-    --While           Statement           Statement
-    --Until           Statement           Statement
+    While t t'              ->  do hang "while" >> pp t >> outdent >> nl
+                                   inword "do" >> pp t' >> outword "done"
+    Until t t'              ->  do hang "until" >> pp t >> outdent >> nl
+                                   inword "do" >> pp t' >> outword "done"
     BraceBrace _            ->  error "[[ ]]"
     VarAssign var val       ->  pp var >> word "=" >> pp val
     DictDecl var pairs      ->  do wordcat ["declare -A ", bytes var, "=("]
