@@ -27,4 +27,9 @@ do
   echo ok
 done 1>>$'fo&o'
 
-
+#> let echo ss = SimpleCommand "echo" ss
+#> let groupedStmt = Sequence (echo ["-n","hello"]) (echo ["dudes"])
+#> let redirectStmt = Redirect groupedStmt Out 1 (Left "msg")
+#> Data.ByteString.Char8.putStr (bytes redirectStmt)
+{ echo -n hello
+  echo dudes ;} 1>msg
