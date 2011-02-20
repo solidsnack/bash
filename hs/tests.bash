@@ -3,7 +3,7 @@
 set -o nounset -o errexit -o pipefail
 
 function _sed {
-    case $(uname) in
+    case "$(uname)" in
         Darwin)  sed -E "$@" ;;
         Linux)   sed -r "$@" ;;
         *)       echo "Unknown UNIX." 1>&2 ; exit 1 ;;
