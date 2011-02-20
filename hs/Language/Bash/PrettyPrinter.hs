@@ -28,6 +28,8 @@ instance PP Identifier where
   pp (Identifier b)          =  word b
 instance PP Expression where
   pp (Literal lit)           =  word (Esc.bytes lit)
+  pp Asterisk                =  word "*"
+  pp QuestionMark            =  word "?"
   pp (ReadVar ident)         =  word "$" >> pp ident
   pp (ReadVarSafe ident)     =  word "${" >> pp ident >> word ":-}"
   pp (ReadArray ident expr)  =  do word "${" >> pp ident

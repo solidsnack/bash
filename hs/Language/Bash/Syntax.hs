@@ -52,6 +52,8 @@ cmd argv0 argv               =  SimpleCommand (e argv0) (fmap e argv)
   e                          =  Literal . Esc.bash
 
 data Expression              =  Literal Esc.Bash
+                             |  Asterisk
+                             |  QuestionMark
                              |  ReadVar Identifier
                              |  ReadVarSafe Identifier
                              |  ReadArray Identifier Expression
