@@ -124,13 +124,5 @@ render_redirect direction fd target =
                                        Append -> ">>"
                    , case target of Left expr -> bytes expr
                                     Right fd' -> '&' `cons` bytes fd' ]
- where
-  operator                   =  case direction of
-    In                      ->  "<"
-    Out                     ->  ">"
-    Append                  ->  ">>"
-  target'                    =  case target of
-    Left expr               ->  bytes expr
-    Right fd'               ->  '&' `cons` bytes fd'
 
 
