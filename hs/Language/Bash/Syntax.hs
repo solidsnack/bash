@@ -9,6 +9,7 @@ import Prelude hiding (all)
 import Data.Char
 import Data.String
 import Data.Maybe
+import Data.Word (Word8)
 import Data.ByteString.Char8
 
 import qualified Text.ShellEscape as Esc
@@ -17,6 +18,7 @@ import qualified Text.ShellEscape as Esc
 data Statement
   = SimpleCommand   Expression          [Expression]
   | NoOp
+  | Raw             ByteString
   | Bang            Statement
   | AndAnd          Statement           Statement
   | OrOr            Statement           Statement
@@ -37,6 +39,8 @@ data Statement
   | DictDecl        Identifier          [(Identifier, Expression)]
   | DictUpdate      Identifier          Expression          Expression
   | DictAssign      Identifier          [(Expression, Expression)]
+  | Redirect        Statement           Redirection
+                    FileDescriptor      (Either Expression FileDescriptor)
 deriving instance Eq Statement
 deriving instance Ord Statement
 deriving instance Show Statement
@@ -85,6 +89,20 @@ identifier bytes             =  do
  where
   okayTail c                 =  (isAlphaNum c || c == '_') && isAscii c
   okayHead c                 =  (isAlpha c || c == '_') && isAscii c
+
+
+newtype FileDescriptor       =  FileDescriptor Word8
+deriving instance Eq FileDescriptor
+deriving instance Ord FileDescriptor
+deriving instance Num FileDescriptor
+deriving instance Show FileDescriptor
+
+
+data Redirection             =  In | Out | Append
+deriving instance Eq Redirection
+deriving instance Ord Redirection
+deriving instance Show Redirection
+
 
 data ConditionalExpression
   = File_a          Expression

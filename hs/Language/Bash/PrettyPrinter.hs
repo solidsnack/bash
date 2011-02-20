@@ -11,8 +11,9 @@
 
 module Language.Bash.PrettyPrinter where
 
-import Data.ByteString.Char8 (ByteString, concat)
-import Prelude hiding (concat, length, replicate)
+import Data.Word (Word8)
+import Data.ByteString.Char8 (ByteString, concat, pack, cons, lines)
+import Prelude hiding (concat, length, replicate, lines)
 import Control.Monad.State.Strict
 
 import qualified Text.ShellEscape as Esc
@@ -46,6 +47,8 @@ instance PP Expression where
   pp (Concat expr0 expr1)    =  case (expr0, expr1) of
     (ReadVar _, Literal _)  ->  word "\"" >> pp expr0 >> word "\"" >> pp expr1
     _                       ->  pp expr0 >> pp expr1
+instance PP FileDescriptor where
+  pp (FileDescriptor w)      =  (word . pack . show) w
 
 bytes                       ::  (PP t) => t -> ByteString
 bytes                        =  renderBytes (nlCol 0) . pp
@@ -69,6 +72,7 @@ instance PP Statement where
                                    mapM_ (breakline . bytes) args
                                    outdent
     NoOp                    ->  word ": 'Do nothing.'"
+    Raw b                   ->  mapM_ word (lines b)
     Bang t                  ->  hang "!"  >> pp t      >> outdent
     AndAnd t t'             ->  pp t      >> word "&&" >> nl        >> pp t'
     OrOr t t'               ->  pp t      >> word "||" >> nl        >> pp t'
@@ -107,36 +111,26 @@ instance PP Statement where
                                    pp val
     DictAssign var pairs    ->  do pp var >> word "=(" >> nl
                                    mapM_ arrayset pairs >> word ")"
+    Redirect stmt d fd t    ->  pp stmt >> word (render_redirect d fd t) >> nl
 
 arrayset (key, val) = word "[" >> pp key >> word "]=" >> pp val >> nl
 
 case_clause (ptrn, stmt)     =  do hang (bytes_state (pp ptrn >> word ")  "))
                                    pp stmt >> word ";;" >> nl
 
-{-
+render_redirect direction fd target =
+  concat [ bytes fd, case direction of In     -> "<"
+                                       Out    -> ">"
+                                       Append -> ">>"
+                   , case target of Left expr -> bytes expr
+                                    Right fd' -> '&' `cons` bytes fd' ]
+ where
+  operator                   =  case direction of
+    In                      ->  "<"
+    Out                     ->  ">"
+    Append                  ->  ">>"
+  target'                    =  case target of
+    Left expr               ->  bytes expr
+    Right fd'               ->  '&' `cons` bytes fd'
 
 
-  = SimpleCommand   Expression          [Expression]
-  | NoOp
-  | Bang            Statement
-  | AndAnd          Statement           Statement
-  | OrOr            Statement           Statement
-  | Pipe            Statement           Statement
-  | Sequence        Statement           Statement
-  | Background      Statement           Statement
-  | Group           Statement
-  | Subshell        Statement
-  | Function        Identifier          Statement
-  | IfThen          Statement           Statement
-  | IfThenElse      Statement           Statement           Statement
-  | For             Identifier          [Expression]        Statement
-  | Case            Expression          [(Expression, Statement)]
-  | While           Statement           Statement
-  | Until           Statement           Statement
-  | BraceBrace      ConditionalExpression
-  | VarAssign       Identifier          Expression
-  | DictDecl        Identifier          [(Identifier, Expression)]
-  | DictUpdate      Identifier          Expression          Expression
-  | DictAssign      Identifier          [(Expression, Expression)]
-
- -}
