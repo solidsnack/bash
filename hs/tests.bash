@@ -1,7 +1,16 @@
 #!/bin/bash
-set -o nounset -o errexit -o pipefail
-#> :load ./Language/Bash/PrettyPrinter.hs
 # This script is literate Bashkell.
+set -o nounset -o errexit -o pipefail
+function body          { sed -r '1,/^exit 0$/ d' ;}
+function ghci_commands { sed -rn '/^#> (.+)$/ { s//\1/ ; p } ; /^$/ { p }' ;}
+case "${1:-}" in
+  ghci)         cat "$0" | body | ghci_commands ;;
+  ''|tests)     cat "$0" | body ;;
+  *)            echo "Arugment error." 1>&2 ;;
+esac
+exit 0
+
+#> :load ./Language/Bash/PrettyPrinter.hs
 
 #> let ls = SimpleCommand "ls" . (:[])
 #> let ifStmt = IfThenElse (ls ".") (ls ".") (ls "/")
