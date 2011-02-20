@@ -12,6 +12,7 @@ function _sed {
 
 function body          { _sed '1,/^exit 0$/ d' ;}
 function ghci_commands { _sed -n '/^#> (.+)$/ { s//\1/ ; p; } ; /^$/ { p; }' ;}
+
 case "${1:-}" in
   ghci)         cat settings.ghci; cat "$0" | body | ghci_commands ;;
   ''|tests)     cat "$0" | body ;;
