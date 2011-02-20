@@ -1,6 +1,7 @@
 {-# LANGUAGE EmptyDataDecls
            , OverloadedStrings
            , StandaloneDeriving
+           , GeneralizedNewtypeDeriving
   #-}
 
 module Language.Bash.Syntax where
