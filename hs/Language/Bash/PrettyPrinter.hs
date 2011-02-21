@@ -133,8 +133,6 @@ render_redirect direction fd target =
                    , case target of Left expr -> bytes expr
                                     Right fd' -> '&' `cons` bytes fd' ]
 
-grp t                        =  Group t
-
 quote b                      =  '"' `cons` b `snoc` '"'
 
 braces b                     =  "${" `append` b `snoc` '}'
@@ -145,4 +143,30 @@ brackets b                   =  '[' `cons` b `snoc` ']'
 
 identpart (Left special)     =  (drop 1 . bytes) special
 identpart (Right ident)      =  bytes ident
+
+grp t                        =  case t of
+  SimpleCommand _ _         ->  t
+  NoOp                      ->  t
+  Raw _                     ->  Group t
+  Bang _                    ->  Group t
+  AndAnd _ _                ->  Group t
+  OrOr _ _                  ->  Group t
+  Pipe _ _                  ->  Group t
+  Sequence _ _              ->  Group t
+  Background _ _            ->  Group t
+  Group _                   ->  t
+  Subshell _                ->  t
+  Function ident _          ->  t
+  IfThen _ _                ->  t
+  IfThenElse _ _ _          ->  t
+  For _ _ _                 ->  t
+  Case _ _                  ->  t
+  While _ _                 ->  t
+  Until _ _                 ->  t
+  BraceBrace _              ->  t
+  VarAssign _ _             ->  t
+  DictDecl _ _              ->  t
+  DictUpdate _ _ _          ->  t
+  DictAssign _ _            ->  t
+  Redirect _ _ _ _          ->  Group t
 
