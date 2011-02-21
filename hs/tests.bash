@@ -18,9 +18,16 @@ function ghci_commands {
   _sed -n '/^#> (.+)$/ { s//\1/ ; p ;} ; /^$/ { p ;}'
 }
 
+function results_filter {
+  _sed -n '/^########!/,/^########-/ { /^########/ { s/^.+$// ;} ; p ;}' "$@"
+}
+
 case "${1:-}" in
-  ghci)         cat "$0" | body | ghci_commands ;;
+  commands)     cat "$0" | body | ghci_commands ;;
   ''|tests)     cat "$0" | body ;;
+  filter)       results_filter "$@" ;;
+  ghci)         cat "$0" | body | ghci_commands | ghci ;;
+  test)         "$0" ghci 2>/dev/null | results_filter ;;
   *)            echo "Arugment error." 1>&2 ;;
 esac
 
@@ -30,7 +37,9 @@ exit 0
 #> :set -XOverloadedStrings
 #> :set -XNoMonomorphismRestriction
 #> :load ./Language/Bash/PrettyPrinter.hs
-#> let render = Data.ByteString.Char8.putStr . bytes
+#> let start = "########!\n"
+#> let end = "########-\n"
+#> let render x = Data.ByteString.Char8.putStr (concat [start, bytes x, end])
 
 #> let ls = SimpleCommand "ls" . (:[])
 #> let ifStmt = IfThenElse (ls ".") (ls ".") (ls "/")
