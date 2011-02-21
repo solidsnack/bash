@@ -119,7 +119,6 @@ instance PP Statement where
                                    mapM_ arrayset pairs >> word ")"
     Redirect stmt d fd t    ->  do pp (grp stmt)
                                    word (render_redirect d fd t)
-                                   nl
 
 arrayset (key, val) = word "[" >> pp key >> word "]=" >> pp val >> nl
 
