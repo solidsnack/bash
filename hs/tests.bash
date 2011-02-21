@@ -2,24 +2,27 @@
 # This script is literate Bashkell.
 set -o nounset -o errexit -o pipefail
 
-function _sed {
-    case "$(uname)" in
-        Darwin)  sed -E "$@" ;;
-        Linux)   sed -r "$@" ;;
-        *)       echo "Unknown UNIX." 1>&2 ; exit 1 ;;
-    esac
-}
+declare -a esed=()
+if sed --version | fgrep -q GNU &>/dev/null
+then
+  esed=(sed -r)
+else
+  esed=(sed -E)
+fi
 
 function body          {
-  _sed '1,/^exit 0$/ d'
+  ${esed[@]} '1,/^exit 0$/ d'
 }
 
 function ghci_commands {
-  _sed -n '/^#> (.+)$/ { s//\1/ ; p ;} ; /^$/ { p ;}'
+  ${esed[@]} -n '/^#> (.+)$/ { s//\1/ ; p ;} ; /^$/ { p ;}'
 }
 
 function results_filter {
-  _sed -n '/^########!/,/^########-/ { /^########/ { s/^.+$// ;} ; p ;}' "$@"
+  ${esed[@]} -n '/^########!/,/^########-/ {
+                   /^########/ { s/^.+$// ;}
+                   p
+                 }' "$@"
 }
 
 case "${1:-}" in
