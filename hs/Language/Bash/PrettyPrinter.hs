@@ -12,8 +12,8 @@
 module Language.Bash.PrettyPrinter where
 
 import Data.Word (Word8)
-import Data.ByteString.Char8 (ByteString, concat, pack, cons, lines)
-import Prelude hiding (concat, length, replicate, lines)
+import Data.ByteString.Char8
+import Prelude hiding (concat, length, replicate, lines, drop)
 import Control.Monad.State.Strict
 
 import qualified Text.ShellEscape as Esc
@@ -26,16 +26,18 @@ class PP t where
   pp                        ::  t -> State PPState ()
 instance PP Identifier where
   pp (Identifier b)          =  word b
+instance PP SpecialVar where
+  pp                         =  word . specialVarBytes
 instance PP Expression where
   pp (Literal lit)           =  word (Esc.bytes lit)
   pp Asterisk                =  word "*"
   pp QuestionMark            =  word "?"
-  pp (ReadVar ident)         =  word "$" >> pp ident
-  pp (ReadVarSafe ident)     =  word "${" >> pp ident >> word ":-}"
-  pp (ReadArray ident expr)  =  do word "${" >> pp ident
-                                   word "[" >> pp expr >> word "]}"
-  pp (ReadArraySafe ident expr) = do word "${" >> pp ident
-                                     word "[" >> pp expr >> word "]:-}"
+  pp (ReadVar var)           =  (word . quote . ('$' `cons`) . identpart) var
+  pp (ReadVarSafe var)       =  (word . quote . braces0 . identpart) var
+  pp (ReadArray ident expr)  =  (word . braces)
+                                (bytes ident `append` brackets (bytes expr))
+  pp (ReadArraySafe ident expr) = (word . braces0)
+                                  (bytes ident `append` brackets (bytes expr))
   -- Examples that all work for nasty arguments containing brackets:
   --   echo "${array[$1]}"
   --   echo "${array["$1"]}"
@@ -43,12 +45,13 @@ instance PP Expression where
   -- Looks like we can get away with murder here.
   pp (ARGVElements)          =  word "\"$@\""
   pp (ARGVLength)            =  word "$#"
-  pp (Elements ident)        =  word "\"${" >> pp ident >> word "[@]}\""
-  pp (Length ident)          =  word "${#" >> pp ident >> word "}"
-  pp (ArrayLength ident)     =  word "${#" >> pp ident >> word "[@]}"
-  pp (Concat expr0 expr1)    =  case (expr0, expr1) of
-    (ReadVar _, Literal _)  ->  word "\"" >> pp expr0 >> word "\"" >> pp expr1
-    _                       ->  pp expr0 >> pp expr1
+  pp (Elements ident)        =  (word . quote . braces)
+                                (bytes ident `append` "[@]")
+  pp (Length ident)          =  (word . quote . braces)
+                                ('#' `cons` bytes ident)
+  pp (ArrayLength ident)     =  (word . quote . braces)
+                                ('#' `cons` bytes ident `append` "[@]")
+  pp (Concat expr0 expr1)    =  wordcat [bytes expr0, bytes expr1]
 instance PP FileDescriptor where
   pp (FileDescriptor w)      =  (word . pack . show) w
 
@@ -75,12 +78,12 @@ instance PP Statement where
                                    outdent
     NoOp                    ->  word ": 'Do nothing.'"
     Raw b                   ->  mapM_ word (lines b)
-    Bang t                  ->  hang "!"  >> pp t      >> outdent
-    AndAnd t t'             ->  pp t      >> word "&&" >> nl        >> pp t'
-    OrOr t t'               ->  pp t      >> word "||" >> nl        >> pp t'
-    Pipe t t'               ->  pp t      >> word "|"  >> nl        >> pp t'
-    Sequence t t'           ->  pp t                   >> nl        >> pp t'
-    Background t t'         ->  pp t      >> word "&"  >> nl        >> pp t'
+    Bang t                  ->  hang "!"   >> pp (grp t) >> outdent
+    AndAnd t t'             ->  pp (grp t) >> word "&&" >> nl >> pp (grp t')
+    OrOr t t'               ->  pp (grp t) >> word "||" >> nl >> pp (grp t')
+    Pipe t t'               ->  pp (grp t) >> word "|"  >> nl >> pp (grp t')
+    Sequence t t'           ->  pp t       >> nl        >> pp t'
+    Background t t'         ->  pp (grp t) >> word "&"  >> nl >> pp t'
     Group t                 ->  hang "{"  >> pp t      >> word ";}" >> outdent
     Subshell t              ->  hang "("  >> pp t      >> word ")"  >> outdent
     Function ident t        ->  do wordcat ["function ", bytes ident]
@@ -113,7 +116,9 @@ instance PP Statement where
                                    pp val
     DictAssign var pairs    ->  do pp var >> word "=(" >> nl
                                    mapM_ arrayset pairs >> word ")"
-    Redirect stmt d fd t    ->  pp stmt >> word (render_redirect d fd t) >> nl
+    Redirect stmt d fd t    ->  do pp (grp stmt)
+                                   word (render_redirect d fd t)
+                                   nl
 
 arrayset (key, val) = word "[" >> pp key >> word "]=" >> pp val >> nl
 
@@ -127,4 +132,16 @@ render_redirect direction fd target =
                    , case target of Left expr -> bytes expr
                                     Right fd' -> '&' `cons` bytes fd' ]
 
+grp t                        =  Group t
+
+quote b                      =  '"' `cons` b `snoc` '"'
+
+braces b                     =  "${" `append` b `snoc` '}'
+
+braces0 b                    =  "${" `append` b `append` ":-}"
+
+brackets b                   =  '[' `cons` b `snoc` ']'
+
+identpart (Left special)     =  (drop 1 . bytes) special
+identpart (Right ident)      =  bytes ident
 

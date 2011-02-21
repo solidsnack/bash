@@ -54,8 +54,8 @@ cmd argv0 argv               =  SimpleCommand (e argv0) (fmap e argv)
 data Expression              =  Literal Esc.Bash
                              |  Asterisk
                              |  QuestionMark
-                             |  ReadVar Identifier
-                             |  ReadVarSafe Identifier
+                             |  ReadVar (Either SpecialVar Identifier)
+                             |  ReadVarSafe (Either SpecialVar Identifier)
                              |  ReadArray Identifier Expression
                              |  ReadArraySafe Identifier Expression
                              |  ARGVElements
@@ -151,4 +151,40 @@ data ConditionalExpression
 deriving instance Eq ConditionalExpression
 deriving instance Ord ConditionalExpression
 deriving instance Show ConditionalExpression
+
+data SpecialVar
+  = DollarQuestion | Dollar0 | Dollar1 | Dollar2 | Dollar3 | Dollar4
+                   | Dollar5 | Dollar6 | Dollar7 | Dollar8 | Dollar9
+deriving instance Eq SpecialVar
+deriving instance Ord SpecialVar
+deriving instance Show SpecialVar
+instance IsString SpecialVar where
+  fromString                 =  fromJust . specialVar . fromString
+
+specialVar                  ::  ByteString -> Maybe SpecialVar
+specialVar b | "$?" == b     =  Just DollarQuestion
+             | "$0" == b     =  Just Dollar0
+             | "$1" == b     =  Just Dollar1
+             | "$2" == b     =  Just Dollar2
+             | "$3" == b     =  Just Dollar3
+             | "$4" == b     =  Just Dollar4
+             | "$5" == b     =  Just Dollar5
+             | "$6" == b     =  Just Dollar6
+             | "$7" == b     =  Just Dollar7
+             | "$8" == b     =  Just Dollar8
+             | "$9" == b     =  Just Dollar9
+             | otherwise     =  Nothing
+
+specialVarBytes             ::  SpecialVar -> ByteString
+specialVarBytes DollarQuestion = "$?"
+specialVarBytes Dollar0      =  "$0"
+specialVarBytes Dollar1      =  "$1"
+specialVarBytes Dollar2      =  "$2"
+specialVarBytes Dollar3      =  "$3"
+specialVarBytes Dollar4      =  "$4"
+specialVarBytes Dollar5      =  "$5"
+specialVarBytes Dollar6      =  "$6"
+specialVarBytes Dollar7      =  "$7"
+specialVarBytes Dollar8      =  "$8"
+specialVarBytes Dollar9      =  "$9"
 
