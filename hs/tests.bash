@@ -23,17 +23,20 @@ case "${1:-}" in
   ''|tests)     cat "$0" | body ;;
   *)            echo "Arugment error." 1>&2 ;;
 esac
+
 exit 0
 
 #> :set prompt "#>\n"
 #> :set -XOverloadedStrings
+#> :set -XNoMonomorphismRestriction
 #> :load ./Language/Bash/PrettyPrinter.hs
+#> let render = Data.ByteString.Char8.putStr . bytes
 
 #> let ls = SimpleCommand "ls" . (:[])
 #> let ifStmt = IfThenElse (ls ".") (ls ".") (ls "/")
 #> let whileStmt = While ifStmt (SimpleCommand "echo" ["ok"])
 #> let redirectStmt = Redirect whileStmt Append 1 (Left "fo&o")
-#> Data.ByteString.Char8.putStr (bytes redirectStmt)
+#> render redirectStmt
 while if ls .
       then
         ls .
@@ -47,7 +50,7 @@ done 1>>$'fo&o'
 #> let echo ss = SimpleCommand "echo" ss
 #> let groupedStmt = Sequence (echo ["-n","hello "]) (echo ["dudes."])
 #> let redirectStmt = Redirect groupedStmt Out 1 (Left "msg")
-#> Data.ByteString.Char8.putStr (bytes redirectStmt)
+#> render redirectStmt
 { echo -n $'hello '
   echo dudes. ;} 1>msg
 
