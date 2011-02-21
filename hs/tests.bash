@@ -37,8 +37,8 @@ exit 0
 #> :set -XOverloadedStrings
 #> :set -XNoMonomorphismRestriction
 #> :load ./Language/Bash/PrettyPrinter.hs
-#> let start = "########!\n"
-#> let end = "########-\n"
+#> let start = "\n########!\n"
+#> let end = "\n########-\n"
 #> let render x = Data.ByteString.Char8.putStr (concat [start, bytes x, end])
 
 #> let ls = SimpleCommand "ls" . (:[])
@@ -62,4 +62,12 @@ done 1>>$'fo&o'
 #> render redirectStmt
 { echo -n $'hello '
   echo dudes. ;} 1>msg
+
+#> let (varX :: Identifier) = "x"
+#> let readX = ReadVarSafe (Right varX)
+#> let lsX = SimpleCommand "ls" [readX]
+#> let lsMsg = SimpleCommand "echo" ["Failed to `ls':", readX]
+#> let lsErr = Redirect lsMsg Out 1 (Right 2)
+#> let forStmt = For varX ["/var/log", "/var/mog"] (lsX `OrOr` lsErr)
+#> render forStmt
 
