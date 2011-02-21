@@ -18,8 +18,7 @@ import qualified Text.ShellEscape as Esc
 
 data Statement
   = SimpleCommand   Expression          [Expression]
-  | NoOp
-  | Raw             ByteString
+  | NoOp            ByteString
   | Bang            Statement
   | AndAnd          Statement           Statement
   | OrOr            Statement           Statement

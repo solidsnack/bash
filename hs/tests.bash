@@ -117,3 +117,10 @@ do
   echo $'Failed to `ls\':' "${x:-}" 1>&2
 done
 
+#> let clause0 = ("first", Sequence (NoOp "case:0") (echo ["first"]))
+#> let clause1 = ("second", Sequence (NoOp "case:1") (echo ["second"]))
+#> let clause_ = (Asterisk, Sequence (NoOp "case:fallthrough") (echo ["?"]))
+#> let clauses = [clause0, clause1, clause_]
+#> let caseStmt = Case (ReadVarSafe (Left Dollar1)) clauses
+#> render caseStmt
+

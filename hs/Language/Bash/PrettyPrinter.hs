@@ -14,7 +14,7 @@ module Language.Bash.PrettyPrinter where
 
 import Data.Word (Word8)
 import Data.ByteString.Char8
-import Prelude hiding (concat, length, replicate, lines, drop)
+import Prelude hiding (concat, length, replicate, lines, drop, null)
 import Control.Monad.State.Strict
 
 import qualified Text.ShellEscape as Esc
@@ -77,8 +77,8 @@ instance PP Statement where
     SimpleCommand cmd args  ->  do hang (bytes cmd)
                                    mapM_ (breakline . bytes) args
                                    outdent
-    NoOp                    ->  word ": 'Do nothing.'"
-    Raw b                   ->  mapM_ word (lines b)
+    NoOp msg | null msg     ->  word ":"
+             | otherwise    ->  word ":" >> (word . Esc.bytes . Esc.bash) msg
     Bang t                  ->  hang "!"      >> pp (binGrp t) >> outdent
     AndAnd t t'             ->  do pp (binGrp t) >> word "&&"
                                    nl >> pp (binGrp t')
@@ -125,8 +125,8 @@ instance PP Statement where
 
 arrayset (key, val) = word "[" >> pp key >> word "]=" >> pp val >> nl
 
-case_clause (ptrn, stmt)     =  do hang (bytes_state (pp ptrn >> word ")  "))
-                                   pp stmt >> word ";;" >> nl
+case_clause (ptrn, stmt)     =  do hang (bytes ptrn `append` ") ")
+                                   pp stmt >> word ";;" >> outdent >> nl
 
 render_redirect direction fd target =
   concat [ bytes fd, case direction of In     -> "<"
@@ -147,7 +147,6 @@ identpart (Left special)     =  (drop 1 . bytes) special
 identpart (Right ident)      =  bytes ident
 
 binGrp t                     =  case t of
-  Raw _                     ->  Group t
   Bang _                    ->  Group t
   AndAnd _ _                ->  Group t
   OrOr _ _                  ->  Group t
