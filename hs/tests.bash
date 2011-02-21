@@ -81,8 +81,8 @@ do
 done
 
 #> let cdApache = SimpleCommand "cd" ["/var/www"]
-#> let lsWWWStmt = Redirect (Sequence cdApache whileStmt) Append 2 (Left "/err")
-#> let wfStmt = lsWWWStmt `AndAnd` forStmt
+#> let lsWWW = Redirect (Sequence cdApache whileStmt) Append 2 (Left "/err")
+#> let wfStmt = lsWWW `AndAnd` forStmt
 #> render wfStmt
 { cd /var/www
   while if ls .
