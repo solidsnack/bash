@@ -10,17 +10,22 @@ function _sed {
     esac
 }
 
-function body          { _sed '1,/^exit 0$/ d' ;}
-function ghci_commands { _sed -n '/^#> (.+)$/ { s//\1/ ; p; } ; /^$/ { p; }' ;}
+function body          {
+  _sed '1,/^exit 0$/ d'
+}
+
+function ghci_commands {
+  _sed -n '/^#> (.+)$/ { s//\1/ ; p ;} ; /^$/ { p ;}'
+}
 
 case "${1:-}" in
-  ghci)         cat settings.ghci; cat "$0" | body | ghci_commands ;;
+  ghci)         cat "$0" | body | ghci_commands ;;
   ''|tests)     cat "$0" | body ;;
   *)            echo "Arugment error." 1>&2 ;;
 esac
 exit 0
 
-#> :set prompt "#> "
+#> :set prompt "#>\n"
 #> :set -XOverloadedStrings
 #> :load ./Language/Bash/PrettyPrinter.hs
 
@@ -45,3 +50,4 @@ done 1>>$'fo&o'
 #> Data.ByteString.Char8.putStr (bytes redirectStmt)
 { echo -n $'hello '
   echo dudes. ;} 1>msg
+
