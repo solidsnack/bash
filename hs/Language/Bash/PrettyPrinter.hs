@@ -79,12 +79,15 @@ instance PP Statement where
                                    outdent
     NoOp                    ->  word ": 'Do nothing.'"
     Raw b                   ->  mapM_ word (lines b)
-    Bang t                  ->  hang "!"   >> pp (grp t) >> outdent
-    AndAnd t t'             ->  pp (grp t) >> word "&&" >> nl >> pp (grp t')
-    OrOr t t'               ->  pp (grp t) >> word "||" >> nl >> pp (grp t')
-    Pipe t t'               ->  pp (grp t) >> word "|"  >> nl >> pp (grp t')
-    Sequence t t'           ->  pp t       >> nl        >> pp t'
-    Background t t'         ->  pp (grp t) >> word "&"  >> nl >> pp t'
+    Bang t                  ->  hang "!"      >> pp (binGrp t) >> outdent
+    AndAnd t t'             ->  do pp (binGrp t) >> word "&&"
+                                   nl >> pp (binGrp t')
+    OrOr t t'               ->  do pp (binGrp t) >> word "||"
+                                   nl >> pp (binGrp t')
+    Pipe t t'               ->  do pp (binGrp t) >> word "|"
+                                   nl >> pp (binGrp t')
+    Sequence t t'           ->  pp t          >> nl        >> pp t'
+    Background t t'         ->  pp (binGrp t) >> word "&"  >> nl >> pp t'
     Group t                 ->  hang "{"  >> pp t      >> word ";}" >> outdent
     Subshell t              ->  hang "("  >> pp t      >> word ")"  >> outdent
     Function ident t        ->  do wordcat ["function ", bytes ident]
@@ -117,7 +120,7 @@ instance PP Statement where
                                    pp val
     DictAssign var pairs    ->  do pp var >> word "=(" >> nl
                                    mapM_ arrayset pairs >> word ")"
-    Redirect stmt d fd t    ->  do pp (grp stmt)
+    Redirect stmt d fd t    ->  do pp (redirectGrp stmt)
                                    word (render_redirect d fd t)
 
 arrayset (key, val) = word "[" >> pp key >> word "]=" >> pp val >> nl
@@ -143,9 +146,7 @@ brackets b                   =  '[' `cons` b `snoc` ']'
 identpart (Left special)     =  (drop 1 . bytes) special
 identpart (Right ident)      =  bytes ident
 
-grp t                        =  case t of
-  SimpleCommand _ _         ->  t
-  NoOp                      ->  t
+binGrp t                     =  case t of
   Raw _                     ->  Group t
   Bang _                    ->  Group t
   AndAnd _ _                ->  Group t
@@ -153,19 +154,9 @@ grp t                        =  case t of
   Pipe _ _                  ->  Group t
   Sequence _ _              ->  Group t
   Background _ _            ->  Group t
-  Group _                   ->  t
-  Subshell _                ->  t
-  Function ident _          ->  t
-  IfThen _ _                ->  t
-  IfThenElse _ _ _          ->  t
-  For _ _ _                 ->  t
-  Case _ _                  ->  t
-  While _ _                 ->  t
-  Until _ _                 ->  t
-  BraceBrace _              ->  t
-  VarAssign _ _             ->  t
-  DictDecl _ _              ->  t
-  DictUpdate _ _ _          ->  t
-  DictAssign _ _            ->  t
+  _                         ->  t
+
+redirectGrp t                =  case t of
   Redirect _ _ _ _          ->  Group t
+  _                         ->  binGrp t
 

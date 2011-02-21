@@ -71,12 +71,49 @@ done 1>>$'fo&o'
 #> let lsX = SimpleCommand "ls" [readX]
 #> let lsMsg = SimpleCommand "echo" ["Failed to `ls':", readX]
 #> let lsErr = Redirect lsMsg Out 1 (Right 2)
-#> let forStmt = For varX ["/var/log", "/var/mog"] (lsX `OrOr` lsErr)
+#> let apacheLogs = "/var/log/apache2/" `Concat` Concat Asterisk ".log"
+#> let forStmt = For varX [apacheLogs, "/var/log/httpd"] (lsX `OrOr` lsErr)
 #> render forStmt
-for x in /var/log /var/mog
+for x in /var/log/apache2/*.log /var/log/httpd
 do
   ls "${x:-}" ||
   { echo $'Failed to `ls\':' "${x:-}" 1>&2 ;}
 done
 
+#> let cdApache = SimpleCommand "cd" ["/var/www"]
+#> let lsWWWStmt = Redirect (Sequence cdApache whileStmt) Append 2 (Left "/err")
+#> let wfStmt = lsWWWStmt `AndAnd` forStmt
+#> render wfStmt
+{ cd /var/www
+  while if ls .
+        then
+          ls .
+        else
+          ls /
+        fi
+  do
+    echo ok
+  done ;} 2>>/err &&
+for x in /var/log/apache2/*.log /var/log/httpd
+do
+  ls "${x:-}" ||
+  echo $'Failed to `ls\':' "${x:-}" 1>&2
+done
+
+#> let redirected = Redirect whileStmt Out 2 (Left "/err") `OrOr` forStmt
+#> render redirected
+while if ls .
+      then
+        ls .
+      else
+        ls /
+      fi
+do
+  echo ok
+done 2>/err ||
+for x in /var/log/apache2/*.log /var/log/httpd
+do
+  ls "${x:-}" ||
+  echo $'Failed to `ls\':' "${x:-}" 1>&2
+done
 
