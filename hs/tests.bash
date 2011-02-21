@@ -70,4 +70,10 @@ done 1>>$'fo&o'
 #> let lsErr = Redirect lsMsg Out 1 (Right 2)
 #> let forStmt = For varX ["/var/log", "/var/mog"] (lsX `OrOr` lsErr)
 #> render forStmt
+for x in /var/log /var/mog
+do
+  ls "${x:-}" ||
+  { echo $'Failed to `ls\':' "${x:-}" 1>&2 ;}
+done
+
 
