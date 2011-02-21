@@ -20,6 +20,8 @@ case "${1:-}" in
 esac
 exit 0
 
+#> :set prompt "#> "
+#> :set -XOverloadedStrings
 #> :load ./Language/Bash/PrettyPrinter.hs
 
 #> let ls = SimpleCommand "ls" . (:[])
