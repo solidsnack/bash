@@ -110,7 +110,7 @@ instance PP Statement where
                                    inword "do" >> pp t' >> outword "done"
     Until t t'              ->  do hang "until" >> pp t >> outdent >> nl
                                    inword "do" >> pp t' >> outword "done"
-    BraceBrace _            ->  error "[[ ]]"
+--  BraceBrace _            ->  error "[[ ]]"
     VarAssign var val       ->  pp var >> word "=" >> pp val
     DictDecl var pairs      ->  do wordcat ["declare -A ", bytes var, "=("]
                                    nl >> mapM_ arrayset pairs
