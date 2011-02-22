@@ -10,8 +10,11 @@ module Language.Bash
   , Language.Bash.Syntax.FileDescriptor(..)
   , Language.Bash.PrettyPrinter.PP(..)
   , Language.Bash.PrettyPrinter.bytes
+  , Language.Bash.PrettyPrinter.State.PPState()
+  , Language.Bash.PrettyPrinter.State.render
   ) where
 
 import Language.Bash.Syntax
 import Language.Bash.PrettyPrinter
+import Language.Bash.PrettyPrinter.State
 

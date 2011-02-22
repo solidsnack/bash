@@ -5,11 +5,8 @@
            , NoMonomorphismRestriction
            , GeneralizedNewtypeDeriving
   #-}
-
-{-| Pretty printer for Bash. The pretty printer generates a builder which we
-    pass to the "linker" later to put between the two main chunks of code.
+{-| Pretty printer for Bash.
  -}
-
 module Language.Bash.PrettyPrinter where
 
 import Data.Word (Word8)

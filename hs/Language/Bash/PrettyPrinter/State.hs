@@ -3,8 +3,7 @@
            , NamedFieldPuns
            , NoMonomorphismRestriction
   #-}
-{-| Pretty printer for Bash. The pretty printer generates a builder which we
-    pass to the "linker" later to put between the two main chunks of code.
+{-| Pretty printer state, used within a state monad computation.
  -}
 module Language.Bash.PrettyPrinter.State where
 
@@ -27,6 +26,8 @@ data PPState                 =  PPState { indents :: [Word]
                                         , columns :: Word
                                         , string :: Builder }
 
+{-| Produce a builder from a pretty printer state computation.
+ -}
 render                      ::  PPState -> State PPState () -> Builder
 render init computation      =  string $ execState computation init
 
