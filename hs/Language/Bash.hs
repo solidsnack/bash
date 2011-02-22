@@ -1,12 +1,17 @@
 
-module Language.TaskL.Bash
-  ( Language.TaskL.Bash.Program.Term(..)
-  , Language.TaskL.Bash.PrettyPrinter.builder
-  , Language.TaskL.Bash.PrettyPrinter.colPPState
+module Language.Bash
+  ( Language.Bash.Syntax.Statement(..)
+  , Language.Bash.Syntax.Expression(..)
+  , Language.Bash.Syntax.Identifier()
+  , Language.Bash.Syntax.identifier
+  , Language.Bash.Syntax.SpecialVar()
+  , Language.Bash.Syntax.specialVar
+  , Language.Bash.Syntax.Redirection(..)
+  , Language.Bash.Syntax.FileDescriptor(..)
+  , Language.Bash.PrettyPrinter.PP(..)
+  , Language.Bash.PrettyPrinter.bytes
   ) where
 
-import Language.TaskL.Bash.Program
-import Language.TaskL.Bash.PrettyPrinter
-
-
+import Language.Bash.Syntax
+import Language.Bash.PrettyPrinter
 
