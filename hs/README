@@ -1,1 +1,6 @@
+  Language.Bash allows for high-level, safe construction of a subset of valid
+  Bash scripts. Escaping, nesting and composition of script statements and
+  expressions is handled automatically.
+
   Please read tests.bash to see some examples, along with their output.
+
