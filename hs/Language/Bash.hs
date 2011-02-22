@@ -12,6 +12,7 @@ module Language.Bash
   , Language.Bash.PrettyPrinter.bytes
   , Language.Bash.PrettyPrinter.State.PPState()
   , Language.Bash.PrettyPrinter.State.render
+  , Language.Bash.PrettyPrinter.State.nlCol
   ) where
 
 import Language.Bash.Syntax

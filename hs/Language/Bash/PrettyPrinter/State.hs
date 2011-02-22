@@ -60,14 +60,15 @@ op                          ::  PPState -> PPOp -> PPState
 op state@PPState{..} x       =  case x of
   Indent w                  ->  state {indents = w:indents}
   Outdent                   ->  state {indents = nullTail indents}
-  Newline                   ->  state {string = sNL, flag = True, columns = 0}
+  Newline | not flag        ->  state {string = sNL, flag = True, columns = 0}
+          | otherwise       ->  state
   Word b                    ->  state {string = s', flag = False, columns = c'}
    where
     c'                       =  columns + cast (length padded)
     s'                       =  string `mappend` Builder.fromByteString padded
     dent                     =  cast (sum indents)
-    padded                   =  if flag then replicate dent ' ' `append` b
-                                        else ' ' `cons` b
+    padded | flag            =  replicate dent ' ' `append` b
+           | otherwise       =  ' ' `cons` b
  where
   nullTail list              =  if list == [] then list else List.tail list
   sNL                        =  string `mappend` Builder.fromByteString "\n"
