@@ -123,4 +123,12 @@ done
 #> let clauses = [clause0, clause1, clause_]
 #> let caseStmt = Case (ReadVarSafe (Left Dollar1)) clauses
 #> render caseStmt
+case "${1:-}" in
+  first)  : $'case:0'
+          echo first ;;
+  second)  : $'case:1'
+           echo second ;;
+  *)  : $'case:fallthrough'
+      echo $'?' ;;
+esac
 
