@@ -72,8 +72,10 @@ deriving instance Eq Expression
 deriving instance Ord Expression
 deriving instance Show Expression
 instance IsString Expression where
-  fromString                 =  Literal . Esc.bash . fromString
+  fromString                 =  literal . fromString
 
+literal                     ::  ByteString -> Expression
+literal                      =  Literal . Esc.bash
 
 newtype Identifier           =  Identifier ByteString
 deriving instance Eq Identifier

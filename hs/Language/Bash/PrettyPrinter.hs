@@ -11,6 +11,7 @@ module Language.Bash.PrettyPrinter where
 
 import Data.Word (Word8)
 import Data.ByteString.Char8
+import Data.Binary.Builder (Builder)
 import Prelude hiding (concat, length, replicate, lines, drop, null)
 import Control.Monad.State.Strict
 
@@ -56,19 +57,11 @@ instance PP FileDescriptor where
 bytes                       ::  (PP t) => t -> ByteString
 bytes                        =  renderBytes (nlCol 0) . pp
 
+builder                     ::  (PP t) => t -> Builder
+builder                      =  render (nlCol 0) . pp
+
 bytes_state                  =  renderBytes (nlCol 0)
 
-{-  
-nl                          ::  State PPState ()
-hang                        ::  ByteString -> State PPState ()
-word                        ::  ByteString -> State PPState ()
-wordcat                     ::  [ByteString] -> State PPState ()
-outdent                     ::  State PPState ()
-inword                      ::  ByteString -> State PPState ()
-outword                     ::  ByteString -> State PPState ()
-arrayset                    ::  (ByteString, ByteString) -> State PPState ()
-breakline                   ::  ByteString -> State PPState ()
- -}
 instance PP Statement where
   pp term                    =  case term of
     SimpleCommand cmd args  ->  do hang (bytes cmd)
