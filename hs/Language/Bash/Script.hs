@@ -47,7 +47,6 @@ script_sha1 setup main       =  mconcat [ fromByteString "#!/bin/bash\n"
   token                      =  sha1 (append setup' main')
 
 
-
 {-| A set statement that covers a few error handling options, setting
     @errexit@, @nounset@ and @pipefail@.
  -}
