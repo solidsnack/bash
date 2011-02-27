@@ -9,20 +9,21 @@ module Language.Bash.PrettyPrinter.State where
 
 import qualified Data.List as List
 import Data.Monoid
-import Prelude hiding (concat, length, replicate)
+import Prelude hiding (round, concat, length, replicate)
 import Data.Binary.Builder (Builder, toLazyByteString)
 import qualified Data.Binary.Builder as Builder
-import Data.ByteString.Char8
+import Data.ByteString.Char8 hiding (null)
 import Data.ByteString.Lazy (toChunks)
 import Data.Word
 import Control.Monad.State.Strict
 
 
-{-| State of pretty printing -- string being built, indent levels, whether
-    we've started a new line or not. 
+{-| State of pretty printing -- string being built, indent levels, present
+    column, brace nesting.
  -}
 data PPState                 =  PPState { indents :: [Word]
-                                        , flag :: Bool
+                                        , curly :: [()]
+                                        , round :: [()]
                                         , columns :: Word
                                         , string :: Builder }
 
@@ -37,41 +38,49 @@ renderBytes = ((concat . toChunks . toLazyByteString) .) . render
 {-| Pretty printer state starting on a new line indented to the given column.
  -}
 nlCol                       ::  Word -> PPState
-nlCol w                      =  PPState [w] True 0 Builder.empty
+nlCol w                      =  PPState [w] [()] [()] 0 Builder.empty
 
 
-{-| Operations we can perform while pretty printing:
-
- *  Add n spaces to the indentation.
-
- *  Strip off a level of indentation.
-
- *  Move to the next line.
-
- *  Append a shell word to the current line.
-
+{-| Operations we can perform while pretty printing.
  -}
-data PPOp = Indent Word | Outdent | Word ByteString | Newline
+data PPOp                    =  Indent Word -- ^ Indent by N spaces.
+                             |  Outdent -- ^ Remove and indentation level.
+                             |  Word ByteString -- ^ Add a word to a line.
+                             |  Newline -- ^ Move to newline.
+                             |  Curly Bool -- ^ Introduce a level of braces.
+                             |  Round Bool -- ^ Introduce a level of parens.
 
 
-{-| Apply an operation to a state. 
+{-| Apply an operation to a state.
  -}
 op                          ::  PPState -> PPOp -> PPState
 op state@PPState{..} x       =  case x of
-  Indent w                  ->  state {indents = w:indents}
-  Outdent                   ->  state {indents = nullTail indents}
-  Newline | not flag        ->  state {string = sNL, flag = True, columns = 0}
-          | otherwise       ->  state
-  Word b                    ->  state {string = s', flag = False, columns = c'}
+  Indent w                  ->  state { indents = 2:indents }
+  Outdent                   ->  state { indents = tSafe indents }
+  Curly f | f               ->  state { indents = 2:indents, curly = ():curly
+                                      , string = curly_s                      }
+          | otherwise       ->  state { indents = tSafe indents
+                                      , curly = tSafe curly, string = s_curly }
+  Round f | f               ->  state { indents = 2:indents, round = ():round
+                                      , string = round_s                      }
+          | otherwise       ->  state { indents = tSafe indents
+                                      , round = tSafe round, string = s_round }
+  Newline | columns == 0    ->  state
+          | otherwise       ->  state {string = sNL, columns = 0}
+  Word b                    ->  state {string = s', columns = c'}
    where
     c'                       =  columns + cast (length padded)
     s'                       =  string `mappend` Builder.fromByteString padded
     dent                     =  cast (sum indents)
-    padded | flag            =  replicate dent ' ' `append` b
+    padded | columns /= 0    =  replicate dent ' ' `append` b
            | otherwise       =  ' ' `cons` b
  where
-  nullTail list              =  if list == [] then list else List.tail list
+  tSafe list                 =  if null list then [] else List.tail list
   sNL                        =  string `mappend` Builder.fromByteString "\n"
+  curly_s                    =  Builder.fromByteString "{ " `mappend` string
+  s_curly                    =  string `mappend` Builder.fromByteString " ;}"
+  round_s                    =  Builder.fromByteString "( " `mappend` string
+  s_round                    =  string `mappend` Builder.fromByteString " )"
 
 opM                         ::  [PPOp] -> State PPState ()
 opM                          =  mapM_ (modify . flip op)
