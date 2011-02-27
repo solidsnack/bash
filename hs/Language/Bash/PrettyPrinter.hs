@@ -66,7 +66,7 @@ instance PP ((), Statement ()) where
   pp                         =  pp . snd
 instance (PP (t, Statement t)) => PP (Annotated t) where
   pp (Annotated t stmt)      =  pp (t, stmt)
-instance PP (Statement ()) where
+instance (PP (t, Statement t)) => PP (Statement t) where
   pp term                    =  case term of
     SimpleCommand cmd args  ->  do hang (bytes cmd)
                                    mapM_ (breakline . bytes) args
