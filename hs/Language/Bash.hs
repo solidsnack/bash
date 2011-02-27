@@ -3,6 +3,7 @@
  -}
 module Language.Bash
   ( Language.Bash.Syntax.Statement(..)
+  , Language.Bash.Syntax.Annotated(..)
   , Language.Bash.Syntax.Expression(..)
   , Language.Bash.Syntax.literal
   , Language.Bash.Syntax.Identifier()
@@ -17,12 +18,12 @@ module Language.Bash
   , Language.Bash.PrettyPrinter.State.PPState()
   , Language.Bash.PrettyPrinter.State.render
   , Language.Bash.PrettyPrinter.State.nlCol
-  , Language.Bash.Script.script
-  , Language.Bash.Script.script_sha1
+--, Language.Bash.Script.script
+--, Language.Bash.Script.script_sha1
   ) where
 
 import Language.Bash.Syntax
 import Language.Bash.PrettyPrinter
 import Language.Bash.PrettyPrinter.State
-import Language.Bash.Script
+--import Language.Bash.Script
 

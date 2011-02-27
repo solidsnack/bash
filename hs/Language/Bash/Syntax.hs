@@ -16,37 +16,42 @@ import Data.ByteString.Char8
 import qualified Text.ShellEscape as Esc
 
 
-data Statement
+data Annotated t = Annotated t (Statement t)
+deriving instance (Eq t) => Eq (Annotated t)
+deriving instance (Ord t) => Ord (Annotated t)
+deriving instance (Show t) => Show (Annotated t)
+
+data Statement t
   = SimpleCommand   Expression          [Expression]
   | NoOp            ByteString
-  | Bang            Statement
-  | AndAnd          Statement           Statement
-  | OrOr            Statement           Statement
-  | Pipe            Statement           Statement
-  | Sequence        Statement           Statement
-  | Background      Statement           Statement
-  | Group           Statement
-  | Subshell        Statement
-  | Function        Identifier          Statement
-  | IfThen          Statement           Statement
-  | IfThenElse      Statement           Statement           Statement
-  | For             Identifier          [Expression]        Statement
-  | Case            Expression          [(Expression, Statement)]
-  | While           Statement           Statement
-  | Until           Statement           Statement
+  | Bang            (Annotated t)
+  | AndAnd          (Annotated t)       (Annotated t)
+  | OrOr            (Annotated t)       (Annotated t)
+  | Pipe            (Annotated t)       (Annotated t)
+  | Sequence        (Annotated t)       (Annotated t)
+  | Background      (Annotated t)       (Annotated t)
+  | Group           (Annotated t)
+  | Subshell        (Annotated t)
+  | Function        Identifier          (Annotated t)
+  | IfThen          (Annotated t)       (Annotated t)
+  | IfThenElse      (Annotated t)       (Annotated t)       (Annotated t)
+  | For             Identifier          [Expression]        (Annotated t)
+  | Case            Expression          [(Expression, (Annotated t))]
+  | While           (Annotated t)       (Annotated t)
+  | Until           (Annotated t)       (Annotated t)
 --  BraceBrace      ConditionalExpression
   | VarAssign       Identifier          Expression
   | DictDecl        Identifier          [(Identifier, Expression)]
   | DictUpdate      Identifier          Expression          Expression
   | DictAssign      Identifier          [(Expression, Expression)]
-  | Redirect        Statement           Redirection
+  | Redirect        (Annotated t)       Redirection
                     FileDescriptor      (Either Expression FileDescriptor)
-deriving instance Eq Statement
-deriving instance Ord Statement
-deriving instance Show Statement
+deriving instance (Eq t) => Eq (Statement t)
+deriving instance (Ord t) => Ord (Statement t)
+deriving instance (Show t) => Show (Statement t)
 
 
-cmd                         ::  ByteString -> [ByteString] -> Statement
+cmd                         ::  ByteString -> [ByteString] -> Statement t
 cmd argv0 argv               =  SimpleCommand (e argv0) (fmap e argv)
  where
   e                          =  Literal . Esc.bash

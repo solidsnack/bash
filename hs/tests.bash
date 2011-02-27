@@ -44,10 +44,12 @@ exit 0
 #> let end = "\n########-\n"
 #> let render x = Data.ByteString.Char8.putStr (concat [start, bytes x, end])
 
-#> let ls = SimpleCommand "ls" . (:[])
-#> let ifStmt = IfThenElse (ls ".") (ls ".") (ls "/")
-#> let whileStmt = While ifStmt (SimpleCommand "echo" ["ok"])
-#> let redirectStmt = Redirect whileStmt Append 1 (Left "fo&o")
+#> let ls = Annotated () . SimpleCommand "ls" . (:[])
+#> let echo = Annotated () . SimpleCommand "echo"
+
+#> let ifStmt = Annotated () (IfThenElse (ls ".") (ls ".") (ls "/"))
+#> let whileStmt = Annotated () (While ifStmt (echo ["ok"]))
+#> let redirectStmt = Annotated () (Redirect whileStmt Append 1 (Left "fo&o"))
 #> render redirectStmt
 while if ls .
       then
@@ -59,20 +61,21 @@ do
   echo ok
 done 1>>$'fo&o'
 
-#> let echo ss = SimpleCommand "echo" ss
-#> let groupedStmt = Sequence (echo ["-n","hello "]) (echo ["dudes."])
-#> let redirectStmt = Redirect groupedStmt Out 1 (Left "msg")
+#> let sqnc = Annotated () (Sequence (echo ["-n","hello "]) (echo ["dudes."]))
+#> let redirectStmt = Annotated () (Redirect sqnc Out 1 (Left "msg"))
 #> render redirectStmt
 { echo -n $'hello '
   echo dudes. ;} 1>msg
 
 #> let (varX :: Identifier) = "x"
 #> let readX = ReadVarSafe (Right varX)
-#> let lsX = SimpleCommand "ls" [readX]
-#> let lsMsg = SimpleCommand "echo" ["Failed to `ls':", readX]
-#> let lsErr = Redirect lsMsg Out 1 (Right 2)
+#> let lsX = Annotated () (SimpleCommand "ls" [readX])
+#> let lsMsg = Annotated () (SimpleCommand "echo" ["Failed to `ls':", readX])
+#> let lsErr = Annotated () (Redirect lsMsg Out 1 (Right 2))
+#> let lsOr = Annotated () (lsX `OrOr` lsErr)
 #> let apacheLogs = "/var/log/apache2/" `Concat` Concat Asterisk ".log"
-#> let forStmt = For varX [apacheLogs, "/var/log/httpd"] (lsX `OrOr` lsErr)
+#> let for = For varX [apacheLogs, "/var/log/httpd"] lsOr
+#> let forStmt = Annotated () for
 #> render forStmt
 for x in /var/log/apache2/*.log /var/log/httpd
 do
@@ -80,9 +83,10 @@ do
   { echo $'Failed to `ls\':' "${x:-}" 1>&2 ;}
 done
 
-#> let cdApache = SimpleCommand "cd" ["/var/www"]
-#> let lsWWW = Redirect (Sequence cdApache whileStmt) Append 2 (Left "/err")
-#> let wfStmt = lsWWW `AndAnd` forStmt
+#> let cdApache = Annotated () $ SimpleCommand "cd" ["/var/www"]
+#> let cdWhile = Annotated () (Sequence cdApache whileStmt)
+#> let lsWWW = Redirect cdWhile Append 2 (Left "/err")
+#> let wfStmt = Annotated () lsWWW `AndAnd` forStmt
 #> render wfStmt
 { cd /var/www
   while if ls .
@@ -100,8 +104,8 @@ do
   echo $'Failed to `ls\':' "${x:-}" 1>&2
 done
 
-#> let redirected = Redirect whileStmt Out 2 (Left "/err") `OrOr` forStmt
-#> render redirected
+#> let redirected = Annotated () $ Redirect whileStmt Out 2 (Left "/err")
+#> render $ OrOr redirected forStmt
 while if ls .
       then
         ls .
@@ -117,11 +121,12 @@ do
   echo $'Failed to `ls\':' "${x:-}" 1>&2
 done
 
-#> let clause0 = ("first", Sequence (NoOp "case:0") (echo ["first"]))
-#> let clause1 = ("second", Sequence (NoOp "case:1") (echo ["second"]))
-#> let clause_ = (Asterisk, Sequence (NoOp "case:fallthrough") (echo ["?"]))
+#> let clause ex = (ex, Annotated () (Sequence (echo ["case:"]) (echo [ex])))
+#> let clause0 = clause "first"
+#> let clause1 = clause "second"
+#> let clause_ = (Asterisk, echo ["?"])
 #> let clauses = [clause0, clause1, clause_]
-#> let caseStmt = Case (ReadVarSafe (Left Dollar1)) clauses
+#> let caseStmt = Annotated () $ Case (ReadVarSafe (Left Dollar1)) clauses
 #> render caseStmt
 case "${1:-}" in
   first)  : $'case:0'

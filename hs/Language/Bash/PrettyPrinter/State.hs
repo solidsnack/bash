@@ -55,31 +55,31 @@ data PPOp                    =  Indent Word -- ^ Indent by N spaces.
  -}
 op                          ::  PPState -> PPOp -> PPState
 op state@PPState{..} x       =  case x of
-  Indent w                  ->  state { indents = 2:indents }
+  Indent w                  ->  state { indents = w:indents }
   Outdent                   ->  state { indents = tSafe indents }
   Curly f | f               ->  state { indents = 2:indents, curly = ():curly
-                                      , string = curly_s                      }
+                                      , string = curly_s, columns = columns+2 }
           | otherwise       ->  state { indents = tSafe indents
                                       , curly = tSafe curly, string = s_curly }
   Round f | f               ->  state { indents = 2:indents, round = ():round
-                                      , string = round_s                      }
+                                      , string = round_s, columns = columns+2 }
           | otherwise       ->  state { indents = tSafe indents
                                       , round = tSafe round, string = s_round }
   Newline | columns == 0    ->  state
-          | otherwise       ->  state {string = sNL, columns = 0}
-  Word b                    ->  state {string = s', columns = c'}
+          | otherwise       ->  state { string = sNL, columns = 0 }
+  Word b                    ->  state { string = s', columns = c' }
    where
     c'                       =  columns + cast (length padded)
     s'                       =  string `mappend` Builder.fromByteString padded
     dent                     =  cast (sum indents)
-    padded | columns /= 0    =  replicate dent ' ' `append` b
+    padded | columns == 0    =  replicate dent ' ' `append` b
            | otherwise       =  ' ' `cons` b
  where
   tSafe list                 =  if null list then [] else List.tail list
   sNL                        =  string `mappend` Builder.fromByteString "\n"
-  curly_s                    =  Builder.fromByteString "{ " `mappend` string
+  curly_s                    =  Builder.fromByteString "{" `mappend` string
   s_curly                    =  string `mappend` Builder.fromByteString " ;}"
-  round_s                    =  Builder.fromByteString "( " `mappend` string
+  round_s                    =  Builder.fromByteString "(" `mappend` string
   s_round                    =  string `mappend` Builder.fromByteString " )"
 
 opM                         ::  [PPOp] -> State PPState ()
@@ -99,6 +99,14 @@ inword                      ::  ByteString -> State PPState ()
 inword b                     =  opM [Word b, Indent 2, Newline]
 outword                     ::  ByteString -> State PPState ()
 outword b                    =  opM [Newline, Outdent, Word b]
+curlyOpen                   ::  State PPState ()
+curlyOpen                    =  opM [Curly True]
+curlyClose                  ::  State PPState ()
+curlyClose                   =  opM [Curly False]
+roundOpen                   ::  State PPState ()
+roundOpen                    =  opM [Round True]
+roundClose                  ::  State PPState ()
+roundClose                   =  opM [Round False]
 
 breakline                   ::  ByteString -> State PPState ()
 breakline b                  =  do

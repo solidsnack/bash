@@ -4,6 +4,7 @@
            , NamedFieldPuns
            , NoMonomorphismRestriction
            , GeneralizedNewtypeDeriving
+           , UndecidableInstances
   #-}
 {-| Pretty printer for Bash.
  -}
@@ -20,6 +21,14 @@ import qualified Text.ShellEscape as Esc
 import Language.Bash.Syntax
 import Language.Bash.PrettyPrinter.State
 
+
+bytes                       ::  (PP t) => t -> ByteString
+bytes                        =  renderBytes (nlCol 0) . pp
+
+builder                     ::  (PP t) => t -> Builder
+builder                      =  render (nlCol 0) . pp
+
+bytes_state                  =  renderBytes (nlCol 0)
 
 class PP t where
   pp                        ::  t -> State PPState ()
@@ -53,33 +62,25 @@ instance PP Expression where
   pp (Concat expr0 expr1)    =  wordcat [bytes expr0, bytes expr1]
 instance PP FileDescriptor where
   pp (FileDescriptor w)      =  (word . pack . show) w
-
-bytes                       ::  (PP t) => t -> ByteString
-bytes                        =  renderBytes (nlCol 0) . pp
-
-builder                     ::  (PP t) => t -> Builder
-builder                      =  render (nlCol 0) . pp
-
-bytes_state                  =  renderBytes (nlCol 0)
-
-instance PP Statement where
+instance PP ((), Statement ()) where
+  pp                         =  pp . snd
+instance (PP (t, Statement t)) => PP (Annotated t) where
+  pp (Annotated t stmt)      =  pp (t, stmt)
+instance PP (Statement ()) where
   pp term                    =  case term of
     SimpleCommand cmd args  ->  do hang (bytes cmd)
                                    mapM_ (breakline . bytes) args
                                    outdent
     NoOp msg | null msg     ->  word ":"
              | otherwise    ->  word ":" >> (word . Esc.bytes . Esc.bash) msg
-    Bang t                  ->  hang "!"      >> pp (binGrp t) >> outdent
-    AndAnd t t'             ->  do pp (binGrp t) >> word "&&"
-                                   nl >> pp (binGrp t')
-    OrOr t t'               ->  do pp (binGrp t) >> word "||"
-                                   nl >> pp (binGrp t')
-    Pipe t t'               ->  do pp (binGrp t) >> word "|"
-                                   nl >> pp (binGrp t')
+    Bang t                  ->  hang "!"      >> binGrp t >> outdent
+    AndAnd t t'             ->  binGrp t >> word "&&" >> nl >> binGrp t'
+    OrOr t t'               ->  binGrp t >> word "||" >> nl >> binGrp t'
+    Pipe t t'               ->  binGrp t >> word "|"  >> nl >> binGrp t'
     Sequence t t'           ->  pp t          >> nl        >> pp t'
-    Background t t'         ->  pp (binGrp t) >> word "&"  >> nl >> pp t'
-    Group t                 ->  hang "{"  >> pp t      >> word ";}" >> outdent
-    Subshell t              ->  hang "("  >> pp t      >> word ")"  >> outdent
+    Background t t'         ->  binGrp t >> word "&"  >> nl >> pp t'
+    Group t                 ->  curlyOpen >> pp t     >> curlyClose >> outdent
+    Subshell t              ->  roundOpen >> pp t     >> roundClose >> outdent
     Function ident t        ->  do wordcat ["function ", bytes ident]
                                    inword " {" >> pp t >> outword "}"
     IfThen t t'             ->  do hang "if" >> pp t   >> outdent   >> nl
@@ -110,7 +111,7 @@ instance PP Statement where
                                    pp val
     DictAssign var pairs    ->  do pp var >> word "=(" >> nl
                                    mapM_ arrayset pairs >> word ")"
-    Redirect stmt d fd t    ->  do pp (redirectGrp stmt)
+    Redirect stmt d fd t    ->  do redirectGrp stmt
                                    word (render_redirect d fd t)
 
 arrayset (key, val) = word "[" >> pp key >> word "]=" >> pp val >> nl
@@ -136,16 +137,16 @@ brackets b                   =  '[' `cons` b `snoc` ']'
 identpart (Left special)     =  (drop 1 . bytes) special
 identpart (Right ident)      =  bytes ident
 
-binGrp t                     =  case t of
-  Bang _                    ->  Group t
-  AndAnd _ _                ->  Group t
-  OrOr _ _                  ->  Group t
-  Pipe _ _                  ->  Group t
-  Sequence _ _              ->  Group t
-  Background _ _            ->  Group t
-  _                         ->  t
+binGrp a@(Annotated _ stmt)  =  case stmt of
+  Bang _                    ->  curlyOpen >> pp a >> curlyClose
+  AndAnd _ _                ->  curlyOpen >> pp a >> curlyClose
+  OrOr _ _                  ->  curlyOpen >> pp a >> curlyClose
+  Pipe _ _                  ->  curlyOpen >> pp a >> curlyClose
+  Sequence _ _              ->  curlyOpen >> pp a >> curlyClose
+  Background _ _            ->  curlyOpen >> pp a >> curlyClose
+  _                         ->  pp a
 
-redirectGrp t                =  case t of
-  Redirect _ _ _ _          ->  Group t
-  _                         ->  binGrp t
+redirectGrp a@(Annotated _ stmt) = case stmt of
+  Redirect _ _ _ _          ->  curlyOpen >> pp a >> curlyClose
+  _                         ->  binGrp a
 
