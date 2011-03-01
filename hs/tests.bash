@@ -40,10 +40,11 @@ exit 0
 #> :set -XOverloadedStrings
 #> :set -XNoMonomorphismRestriction
 #> :set -XScopedTypeVariables
-#> :load ./Language/Bash/PrettyPrinter.hs
+#> :load ./Language/Bash.hs
 #> let start = "\n########!\n"
 #> let end = "\n########-\n"
-#> let render x = Data.ByteString.Char8.putStr (concat [start, bytes x, end])
+#> let concatB = Data.ByteString.Char8.concat
+#> let render x = Data.ByteString.Char8.putStr (concatB [start, bytes x, end])
 
 #> let ls = Annotated () . SimpleCommand "ls" . (:[])
 #> let echo = Annotated () . SimpleCommand "echo"
@@ -122,19 +123,36 @@ do
   echo $'Failed to `ls\':' "${x:-}" 1>&2
 done
 
-#> let clause ex = (ex, Annotated () (Sequence (echo ["case:"]) (echo [ex])))
+#> let rem = Annotated (Lines ["# Remark."] [])
+#> let noRem = Annotated (Lines [] [])
+#> let echoRem = Annotated (Lines ["#>echo"] ["#<echo"]) . SimpleCommand "echo"
+#> let clause ex = (ex, rem (Sequence (echoRem ["case:"]) (echoRem [ex])))
 #> let clause0 = clause "first"
 #> let clause1 = clause "second"
-#> let clause_ = (Asterisk, echo ["?"])
+#> let clause_ = (Asterisk, echoRem ["?"])
 #> let clauses = [clause0, clause1, clause_]
-#> let caseStmt = Annotated () $ Case (ReadVarSafe (Left Dollar1)) clauses
+#> let caseStmt = noRem $ Case (ReadVarSafe (Left Dollar1)) clauses
 #> render caseStmt
 case "${1:-}" in
-  first)  : $'case:0'
-          echo first ;;
-  second)  : $'case:1'
-           echo second ;;
-  *)  : $'case:fallthrough'
-      echo $'?' ;;
+  first)  # Remark.
+          #>echo
+          echo $'case:'
+          #<echo
+          #>echo
+          echo first
+          #<echo
+          ;;
+  second)  # Remark.
+           #>echo
+           echo $'case:'
+           #<echo
+           #>echo
+           echo second
+           #<echo
+           ;;
+  *)  #>echo
+      echo $'?'
+      #<echo
+      ;;
 esac
 

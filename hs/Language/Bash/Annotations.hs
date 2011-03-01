@@ -21,5 +21,7 @@ deriving instance Show Lines
 
 instance Annotation Lines where
   ppA (Lines above below, stmt) =
-    mapM_ word above >> pp stmt >> mapM_ word below
+    mapM_ line above >> pp stmt >> nl >> mapM_ line below
+   where
+    line x                   =  word x >> nl
 
