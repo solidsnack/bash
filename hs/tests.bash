@@ -39,6 +39,7 @@ exit 0
 #> :set prompt "#>\n"
 #> :set -XOverloadedStrings
 #> :set -XNoMonomorphismRestriction
+#> :set -XScopedTypeVariables
 #> :load ./Language/Bash/PrettyPrinter.hs
 #> let start = "\n########!\n"
 #> let end = "\n########-\n"
