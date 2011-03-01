@@ -30,6 +30,12 @@ builder                      =  render (nlCol 0) . pp
 
 bytes_state                  =  renderBytes (nlCol 0)
 
+
+class Annotation t where
+  ppA                       ::  (t, Statement t) -> State PPState ()
+instance Annotation () where
+  ppA                        =  pp . snd
+
 class PP t where
   pp                        ::  t -> State PPState ()
 instance PP Identifier where
@@ -62,11 +68,9 @@ instance PP Expression where
   pp (Concat expr0 expr1)    =  wordcat [bytes expr0, bytes expr1]
 instance PP FileDescriptor where
   pp (FileDescriptor w)      =  (word . pack . show) w
-instance PP ((), Statement ()) where
-  pp                         =  pp . snd
-instance (PP (t, Statement t)) => PP (Annotated t) where
-  pp (Annotated t stmt)      =  pp (t, stmt)
-instance (PP (t, Statement t)) => PP (Statement t) where
+instance (Annotation t) => PP (Annotated t) where
+  pp (Annotated t stmt)      =  ppA (t, stmt)
+instance (Annotation t) => PP (Statement t) where
   pp term                    =  case term of
     SimpleCommand cmd args  ->  do hang (bytes cmd)
                                    mapM_ (breakline . bytes) args

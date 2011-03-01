@@ -18,6 +18,7 @@ module Language.Bash
   , Language.Bash.PrettyPrinter.State.PPState()
   , Language.Bash.PrettyPrinter.State.render
   , Language.Bash.PrettyPrinter.State.nlCol
+  , module Language.Bash.Annotations
 --, Language.Bash.Script.script
 --, Language.Bash.Script.script_sha1
   ) where
@@ -25,5 +26,6 @@ module Language.Bash
 import Language.Bash.Syntax
 import Language.Bash.PrettyPrinter
 import Language.Bash.PrettyPrinter.State
+import Language.Bash.Annotations
 --import Language.Bash.Script
 
