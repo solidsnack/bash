@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings
+           , ScopedTypeVariables
   #-}
 {-| Utilities for turning statements into scripts and script fragments. 
  -}
@@ -19,9 +20,9 @@ import Language.Bash.PrettyPrinter.State
 
 {-| Produce a script beginning with @#!/bin/bash@ and a safe set statement.
  -}
-script                      ::  Statement -> Builder
+script                      ::  Statement () -> Builder
 script statement             =  mconcat [ fromByteString "#!/bin/bash\n"
-                                        , builder setSafe
+                                        , builder (setSafe :: Statement ())
                                         , fromByteString "\n\n"
                                         , builder statement ]
 
@@ -30,9 +31,9 @@ script statement             =  mconcat [ fromByteString "#!/bin/bash\n"
     Cause the script to be scanned for SHA-1 hash of the setup (first argument)
     and main (second argument) before running the second argument.
  -}
-script_sha1                 ::  Statement -> Statement -> Builder
+script_sha1                 ::  Statement () -> Statement () -> Builder
 script_sha1 setup main       =  mconcat [ fromByteString "#!/bin/bash\n"
-                                        , builder setSafe
+                                        , builder (setSafe :: Statement ())
                                         , fromByteString "\n\n"
                                         , fromByteString "######## Setup."
                                         , fromByteString "\n\n"
@@ -50,7 +51,7 @@ script_sha1 setup main       =  mconcat [ fromByteString "#!/bin/bash\n"
 {-| A set statement that covers a few error handling options, setting
     @errexit@, @nounset@ and @pipefail@.
  -}
-setSafe                     ::  Statement
+setSafe                     ::  Statement t
 setSafe                      =  SimpleCommand "set" [ "-o", "errexit"
                                                     , "-o", "nounset"
                                                     , "-o", "pipefail" ]
@@ -58,15 +59,16 @@ setSafe                      =  SimpleCommand "set" [ "-o", "errexit"
 
 {-| Scan @$0@ for the token before running. 
  -}
-tokenCheck                  ::  ByteString -> Statement -> Statement
-tokenCheck token statement   =  IfThen check statement
+tokenCheck                  ::  ByteString -> Statement () -> Statement ()
+tokenCheck token statement   =  IfThen (Annotated () check)
+                                       (Annotated () statement)
  where
   check = SimpleCommand "fgrep" ["-q", literal token, ReadVar (Left Dollar0)]
 
 
 {-| Scan @$0@ the SHA1 of the statement before running.
  -}
-sha1Check                   ::  Statement -> Statement
+sha1Check                   ::  Statement () -> Statement ()
 sha1Check stmt               =  tokenCheck ((sha1 . bytes) stmt) stmt
 
 
