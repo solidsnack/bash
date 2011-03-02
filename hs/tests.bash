@@ -137,7 +137,7 @@ done
 case "${1:-}" in
   first)  # Remark.
           #>echo
-          echo $'case:'
+          echo -n $'case: '
           #<echo
           #>echo
           echo first
@@ -145,7 +145,7 @@ case "${1:-}" in
           ;;
   second)  # Remark.
            #>echo
-           echo $'case:'
+           echo -n $'case: '
            #<echo
            #>echo
            echo second
