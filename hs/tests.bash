@@ -126,7 +126,8 @@ done
 #> let rem = Annotated (Lines ["# Remark."] [])
 #> let noRem = Annotated (Lines [] [])
 #> let echoRem = Annotated (Lines ["#>echo"] ["#<echo"]) . SimpleCommand "echo"
-#> let clause ex = (ex, rem (Sequence (echoRem ["case:"]) (echoRem [ex])))
+#> let echoCase = echoRem ["-n", "case: "]
+#> let clause ex = (ex, rem (Sequence echoCase (echoRem [ex])))
 #> let clause0 = clause "first"
 #> let clause1 = clause "second"
 #> let clause_ = (Asterisk, echoRem ["?"])
