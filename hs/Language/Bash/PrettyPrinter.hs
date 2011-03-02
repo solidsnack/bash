@@ -32,9 +32,9 @@ bytes_state                  =  renderBytes (nlCol 0)
 
 
 class Annotation t where
-  ppA                       ::  (t, Statement t) -> State PPState ()
+  annotate                  ::  t -> Statement t -> State PPState ()
 instance Annotation () where
-  ppA                        =  pp . snd
+  annotate _ stmt            =  pp stmt
 
 class PP t where
   pp                        ::  t -> State PPState ()
@@ -69,7 +69,7 @@ instance PP Expression where
 instance PP FileDescriptor where
   pp (FileDescriptor w)      =  (word . pack . show) w
 instance (Annotation t) => PP (Annotated t) where
-  pp (Annotated t stmt)      =  ppA (t, stmt)
+  pp (Annotated t stmt)      =  annotate t stmt
 instance (Annotation t) => PP (Statement t) where
   pp term                    =  case term of
     SimpleCommand cmd args  ->  do hang (bytes cmd)

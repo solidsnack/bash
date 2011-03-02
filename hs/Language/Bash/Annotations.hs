@@ -21,8 +21,10 @@ deriving instance Ord Lines
 deriving instance Show Lines
 
 instance Annotation Lines where
-  ppA (Lines above below, stmt) =
-    mapM_ line above >> pp stmt >> when ([] /= below) (nl >> mapM_ line below)
+  annotate (Lines above below) stmt = do unlines above
+                                         pp stmt
+                                         when ([] /= below)
+                                              (nl >> unlines below)
    where
-    line x                   =  word x >> nl
+    unlines                  =  mapM_ (\x -> word x >> nl)
 

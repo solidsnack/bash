@@ -7,6 +7,7 @@
 module Language.Bash.Syntax where
 
 import Prelude hiding (all)
+import Control.Arrow ((***))
 import Data.Char
 import Data.String
 import Data.Maybe
@@ -16,10 +17,12 @@ import Data.ByteString.Char8
 import qualified Text.ShellEscape as Esc
 
 
-data Annotated t = Annotated t (Statement t)
+data Annotated t             =  Annotated t (Statement t)
 deriving instance (Eq t) => Eq (Annotated t)
 deriving instance (Ord t) => Ord (Annotated t)
 deriving instance (Show t) => Show (Annotated t)
+instance Functor Annotated where
+  fmap f (Annotated t stmt)  =  Annotated (f t) (fmap f stmt)
 
 data Statement t
   = SimpleCommand   Expression          [Expression]
@@ -49,6 +52,31 @@ data Statement t
 deriving instance (Eq t) => Eq (Statement t)
 deriving instance (Ord t) => Ord (Statement t)
 deriving instance (Show t) => Show (Statement t)
+instance Functor Statement where
+  fmap f stmt                =  case stmt of
+    SimpleCommand cmd args  ->  SimpleCommand cmd args
+    NoOp b                  ->  NoOp b
+    Bang ann                ->  Bang (fmap f ann)
+    AndAnd ann ann'         ->  AndAnd (fmap f ann) (fmap f ann')
+    OrOr ann ann'           ->  OrOr (fmap f ann) (fmap f ann')
+    Pipe ann ann'           ->  Pipe (fmap f ann) (fmap f ann')
+    Sequence ann ann'       ->  Sequence (fmap f ann) (fmap f ann')
+    Background ann ann'     ->  Background (fmap f ann) (fmap f ann')
+    Group ann               ->  Group (fmap f ann)
+    Subshell ann            ->  Subshell (fmap f ann)
+    Function id ann         ->  Function id (fmap f ann)
+    IfThen ann ann'         ->  IfThen (fmap f ann) (fmap f ann')
+    IfThenElse a a' a''     ->  IfThenElse (fmap f a) (fmap f a') (fmap f a'')
+    For id args ann         ->  For id args (fmap f ann)
+    Case expr cases         ->  Case expr (fmap (id *** fmap f) cases)
+    While ann ann'          ->  While (fmap f ann) (fmap f ann')
+    Until ann ann'          ->  Until (fmap f ann) (fmap f ann')
+--  BraceBrace      ConditionalExpression
+    VarAssign id expr       ->  VarAssign id expr
+    DictDecl id assigns     ->  DictDecl id assigns
+    DictUpdate id a b       ->  DictUpdate id a b
+    DictAssign id assigns   ->  DictAssign id assigns
+    Redirect ann r fd chan  ->  Redirect (fmap f ann) r fd chan
 
 
 cmd                         ::  ByteString -> [ByteString] -> Statement t
