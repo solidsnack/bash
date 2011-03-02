@@ -30,4 +30,5 @@ library
                                 Language.Bash.Script
                                 Language.Bash.PrettyPrinter
                                 Language.Bash.PrettyPrinter.State
+                                Language.Bash.Annotations
 
