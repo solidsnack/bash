@@ -26,6 +26,12 @@ data PPState                 =  PPState { indents :: [Word]
                                         , round :: [()]
                                         , columns :: Word
                                         , string :: Builder }
+instance Show PPState where
+  show state@PPState{..}     =  "PPState { indents=" ++ show indents
+                                      ++ " curly="   ++ show curly
+                                      ++ " round="   ++ show round
+                                      ++ " columns=" ++ show columns
+                                      ++ " string="  ++ "..." ++ " }"
 
 {-| Produce a builder from a pretty printer state computation.
  -}
