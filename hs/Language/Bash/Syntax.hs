@@ -13,6 +13,8 @@ import Data.String
 import Data.Maybe
 import Data.Word (Word8)
 import Data.ByteString.Char8
+import Data.Foldable hiding (all)
+import Data.Monoid
 
 import qualified Text.ShellEscape as Esc
 
@@ -23,6 +25,8 @@ deriving instance (Ord t) => Ord (Annotated t)
 deriving instance (Show t) => Show (Annotated t)
 instance Functor Annotated where
   fmap f (Annotated t stmt)  =  Annotated (f t) (fmap f stmt)
+instance Foldable Annotated where
+  foldMap f (Annotated t stmt) = f t `mappend` foldMap f stmt
 
 data Statement t
   = SimpleCommand   Expression          [Expression]
@@ -77,7 +81,31 @@ instance Functor Statement where
     DictUpdate id a b       ->  DictUpdate id a b
     DictAssign id assigns   ->  DictAssign id assigns
     Redirect ann r fd chan  ->  Redirect (fmap f ann) r fd chan
-
+instance Foldable Statement where
+  foldMap f stmt             =  case stmt of
+    SimpleCommand _ _       ->  mempty
+    NoOp _                  ->  mempty
+    Bang ann                ->  foldMap f ann
+    AndAnd ann ann'         ->  foldMap f ann `mappend` foldMap f ann'
+    OrOr ann ann'           ->  foldMap f ann `mappend` foldMap f ann'
+    Pipe ann ann'           ->  foldMap f ann `mappend` foldMap f ann'
+    Sequence ann ann'       ->  foldMap f ann `mappend` foldMap f ann'
+    Background ann ann'     ->  foldMap f ann `mappend` foldMap f ann'
+    Group ann               ->  foldMap f ann
+    Subshell ann            ->  foldMap f ann
+    Function _ ann          ->  foldMap f ann
+    IfThen ann ann'         ->  foldMap f ann `mappend` foldMap f ann'
+    IfThenElse a a' a''     ->  (mconcat . fmap (foldMap f)) [a, a', a'']
+    For _ _ ann             ->  foldMap f ann
+    Case _ cases            ->  (mconcat . fmap (foldMap f . snd)) cases
+    While ann ann'          ->  foldMap f ann `mappend` foldMap f ann'
+    Until ann ann'          ->  foldMap f ann `mappend` foldMap f ann'
+--  BraceBrace      ConditionalExpression
+    VarAssign _ _           ->  mempty
+    DictDecl _ _            ->  mempty
+    DictUpdate _ _ _        ->  mempty
+    DictAssign _ _          ->  mempty
+    Redirect ann _ _ _      ->  foldMap f ann
 
 cmd                         ::  ByteString -> [ByteString] -> Statement t
 cmd argv0 argv               =  SimpleCommand (e argv0) (fmap e argv)
