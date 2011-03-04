@@ -44,10 +44,15 @@ exit 0
 #> let start = "\n########!\n"
 #> let end = "\n########-\n"
 #> let concatB = Data.ByteString.Char8.concat
-#> let render x = Data.ByteString.Char8.putStr (concatB [start, bytes x, end])
+#> let bookend b = Data.ByteString.Char8.putStr (concatB [start, b, end])
+#> let render = bookend . bytes
+#> let unlazy b = Data.ByteString.Lazy.toChunks b !! 0
+#> let unbuilder = unlazy . Data.Binary.Builder.toLazyByteString
+#> let buildrender = bookend . unbuilder
 
 #> let ls = Annotated () . SimpleCommand "ls" . (:[])
 #> let echo = Annotated () . SimpleCommand "echo"
+#> let commented a b = Annotated (Lines a b)
 
 #> let ifStmt = Annotated () (IfThenElse (ls ".") (ls ".") (ls "/"))
 #> let whileStmt = Annotated () (While ifStmt (echo ["ok"]))
@@ -156,4 +161,12 @@ case "${1:-}" in
       #<echo
       ;;
 esac
+
+#> let a = SimpleCommand "echo" ["a"] :: Statement ()
+#> let b = SimpleCommand "echo" ["b"] :: Statement ()
+#> let pre = script_sha1 a b
+#> let lb = Data.Binary.Builder.toLazyByteString pre
+#> -- Too much laziness :(
+#> Data.ByteString.Lazy.Char8.putStrLn lb
+
 
