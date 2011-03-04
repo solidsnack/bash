@@ -1,5 +1,9 @@
 #!/bin/bash
-# This script is literate Bashkell.
+# This script is literate Bashkell. Lines beginning with #> are passed to
+# GHCi during the test.
+## Sketching quine-style test script.
+## let set = SimpleCommand "set"
+## let set' = set ["-o", "nounset", "-o", "errexit", "-o", "pipefail"]
 set -o nounset -o errexit -o pipefail
 
 declare -a esed=()
