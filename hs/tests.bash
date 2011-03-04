@@ -46,7 +46,7 @@ exit 0
 #> let concatB = Data.ByteString.Char8.concat
 #> let bookend b = Data.ByteString.Char8.putStr (concatB [start, b, end])
 #> let render = bookend . bytes
-#> let unlazy b = Data.ByteString.Lazy.toChunks b !! 0
+#> let unlazy = concatB . Data.ByteString.Lazy.toChunks
 #> let unbuilder = unlazy . Data.Binary.Builder.toLazyByteString
 #> let buildrender = bookend . unbuilder
 
@@ -165,8 +165,6 @@ esac
 #> let a = SimpleCommand "echo" ["a"] :: Statement ()
 #> let b = SimpleCommand "echo" ["b"] :: Statement ()
 #> let pre = script_sha1 a b
-#> let lb = Data.Binary.Builder.toLazyByteString pre
-#> -- Too much laziness :(
-#> Data.ByteString.Lazy.Char8.putStrLn lb
+#> buildrender pre
 
 
