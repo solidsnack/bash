@@ -20,7 +20,7 @@ function ghci_commands {
 
 function results_filter {
   ${esed[@]} -n '/^########!/,/^########-/ {
-                   /^########/ { s/^.+$// ;}
+                   /^########[!-]/ { s/^.+$// ;}
                    p
                  }' "$@"
 }
