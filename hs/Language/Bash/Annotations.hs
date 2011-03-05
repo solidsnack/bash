@@ -16,8 +16,8 @@ import Language.Bash.PrettyPrinter.State
 
 {-| Append some raw lines, in flow, above and below a statement.
  -}
-data Lines                   =  Lines [ByteString] -- ^ Lines above.
-                                      [ByteString] -- ^ Lines below.
+data Lines                   =  Lines [ByteString]
+                                      [ByteString]
 deriving instance Eq Lines
 deriving instance Ord Lines
 deriving instance Show Lines
@@ -31,11 +31,11 @@ instance Annotation Lines where
 
 
 {-| Annotate a statement with statements of different types, with special
-    rules for empty @NoOp ""@ statements -- as long as the @ByteString@
-    "comment" in the @NoOp@ is empty, the @NoOp@ is simply elided.
+    rules for empty 'NoOp' statements -- as long as the 'ByteString'
+    \"comment\" in the 'NoOp' is empty, the 'NoOp' is simply elided.
  -}
-data Statements a b          =  Statements (Statement a) -- ^ Statement above.
-                                           (Statement b) -- ^ Statement below.
+data Statements a b          =  Statements (Statement a)
+                                           (Statement b)
 deriving instance (Eq a, Eq b) => Eq (Statements a b)
 deriving instance (Ord a, Ord b) => Ord (Statements a b)
 deriving instance (Show a, Show b) => Show (Statements a b)

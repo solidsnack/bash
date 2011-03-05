@@ -20,7 +20,7 @@ import Language.Bash.PrettyPrinter
 import Language.Bash.PrettyPrinter.State
 
 
-{-| Produce a script beginning with @#!/bin/bash@ and a safe set statement.
+{-| Produce a script beginning with @#!\/bin\/bash@ and a safe set statement.
  -}
 script                      ::  (Annotation t) => Statement t -> Builder
 script statement             =  mconcat [ fromByteString "#!/bin/bash\n"
@@ -29,9 +29,9 @@ script statement             =  mconcat [ fromByteString "#!/bin/bash\n"
                                         , builder statement ]
 
 
-{-| Produce a script beginning with @#!/bin/bash@ and a safe set statement.
-    Cause the script to be scanned for SHA-1 hash of the setup (first argument)
-    and main (second argument) before running the second argument.
+{-| Produce a script beginning with @#!\/bin\/bash@ and a safe set statement.
+    Cause the script to be scanned for SHA-1 hash of the setup (first
+    argument) and main (second argument) before running the second argument.
  -}
 script_sha1                 ::  forall t t'. (Annotation t, Annotation t')
                             =>  Statement t -> Statement t' -> Builder
