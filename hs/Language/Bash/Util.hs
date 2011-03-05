@@ -1,7 +1,8 @@
 {-# LANGUAGE OverloadedStrings
            , NoMonomorphismRestriction
   #-}
-
+{-| Shortcuts for Bash generation that also demonstrate use of the library.
+ -}
 module Language.Bash.Util where
 
 import Data.ByteString.Char8 (ByteString, pack)
