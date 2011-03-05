@@ -168,10 +168,11 @@ esac
 
 #> let a = SimpleCommand "echo" ["a"] :: Statement ()
 #> let b = SimpleCommand "echo" ["b"] :: Statement ()
-#> let pre = script_sha1 a b
+#> let pre = script_sha1 "# Silly script." a b
 #> buildrender pre
 #!/bin/bash
-set -o errexit -o nounset -o pipefail
+
+# Silly script.
 
 ######## Setup.
 
@@ -181,6 +182,7 @@ echo a
 
 if fgrep -q f4b85e070cfe2c7990b5fa6b0603182921430d56 "$0"
 then
+  set -o errexit -o nounset -o pipefail
   echo b
 fi
 

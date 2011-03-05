@@ -29,15 +29,16 @@ script statement             =  mconcat [ fromByteString "#!/bin/bash\n"
                                         , builder statement ]
 
 
-{-| Produce a script beginning with @#!\/bin\/bash@ and a safe set statement.
-    Cause the script to be scanned for SHA-1 hash of the setup (first
-    argument) and main (second argument) before running the second argument.
+{-| Produce a script beginning with @#!\/bin\/bash@ and some (optional)
+    documentation. Cause the script to be scanned for SHA-1 hash of the setup
+    (first statement argument) and main (second statement argument) before
+    running the safe set statement and running the second argument.
  -}
-script_sha1                 ::  forall t t'. (Annotation t, Annotation t')
-                            =>  Statement t -> Statement t' -> Builder
-script_sha1 setup main       =  mconcat [ fromByteString "#!/bin/bash\n"
-                                        , builder (setSafe :: Statement ())
-                                        , fromByteString "\n\n"
+script_sha1
+ :: forall t t'. (Annotation t, Annotation t')
+ => ByteString -> Statement t -> Statement t' -> Builder
+script_sha1 docs setup main  =  mconcat [ fromByteString "#!/bin/bash\n\n"
+                                        , remarks
                                         , fromByteString "######## Setup."
                                         , fromByteString "\n\n"
                                         , fromByteString setup'
@@ -48,9 +49,12 @@ script_sha1 setup main       =  mconcat [ fromByteString "#!/bin/bash\n"
  where
   setup'                     =  bytes setup
   main'                      =  bytes main
+  mainSafe                   =  Sequence (dance setSafe) (dance main)
   token                      =  sha1 (append setup' main')
-  tokenCheck'               ::  Statement (Statements t' ())
-  tokenCheck'                =  tokenCheck token main
+  tokenCheck'               ::  Statement (Statements (Statements t' ()) ())
+  tokenCheck'                =  tokenCheck token mainSafe
+  remarks | docs == mempty   =  fromByteString ""
+          | otherwise        =  fromByteString (docs `mappend` "\n\n")
 
 
 {-| A set statement that covers a few error handling options, setting
@@ -66,11 +70,9 @@ setSafe                      =  SimpleCommand "set" [ "-o", "errexit"
     with the initial statement. This is a bit clumsy but is used internally.
  -}
 tokenCheck :: ByteString -> Statement t -> Statement (Statements t t')
-tokenCheck token statement =
+tokenCheck token stmt =
   IfThen (Annotated (Statements noop noop) (tokenFGREPq token))
-         (Annotated (Statements statement noop) noop)
- where
-  noop                       =  NoOp ""
+         (dance stmt)
 
 {-| Scan @$0@ for the token before running, correctly producing monoidal
     annotations. The function argument provides an annotation for the @fgrep@
@@ -102,4 +104,13 @@ sha1                         =  Data.ByteString.Char8.pack
                              .  Data.Digest.Pure.SHA.sha1
                              .  Data.ByteString.Lazy.fromChunks
                              .  (:[])
+
+{-| The noop dance -- annotate a 'NoOp' with a statement, essentially as a
+    type coercion.
+ -}
+dance                       ::  Statement t -> Annotated (Statements t t')
+dance stmt                   =  Annotated (Statements stmt noop) noop
+
+noop                        ::  Statement any
+noop                         =  NoOp ""
 
