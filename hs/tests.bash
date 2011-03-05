@@ -134,7 +134,7 @@ done
 
 #> let rem = Annotated (Lines ["# Remark."] [])
 #> let noRem = Annotated (Lines [] [])
-#> let echoRem = Annotated (Lines ["#>echo"] ["#<echo"]) . SimpleCommand "echo"
+#> let echoRem = Annotated (Lines ["#+echo"] ["#-echo"]) . SimpleCommand "echo"
 #> let echoCase = echoRem ["-n", "case: "]
 #> let clause ex = (ex, rem (Sequence echoCase (echoRem [ex])))
 #> let clause0 = clause "first"
@@ -145,24 +145,24 @@ done
 #> render caseStmt
 case "${1:-}" in
   first)  # Remark.
-          #>echo
+          #+echo
           echo -n $'case: '
-          #<echo
-          #>echo
+          #-echo
+          #+echo
           echo first
-          #<echo
+          #-echo
           ;;
   second)  # Remark.
-           #>echo
+           #+echo
            echo -n $'case: '
-           #<echo
-           #>echo
+           #-echo
+           #+echo
            echo second
-           #<echo
+           #-echo
            ;;
-  *)  #>echo
+  *)  #+echo
       echo $'?'
-      #<echo
+      #-echo
       ;;
 esac
 
@@ -190,52 +190,53 @@ fi
 #> let evalEcho = Eval (echoRem ["before"])
 #> let echoWhile = echoRem [evalEcho, evalWhile, "mid", processWhile, "after"]
 #> render echoWhile
-#>echo
-echo $( #>echo
-        echo before
-        #<echo
-        ) $( # Comment.
-             while # Comment.
-                   if # Comment.
-                      ls .
+#+echo
+echo "$( #+echo
+         echo before
+         #-echo
+         )" "$( # Comment.
+                while # Comment.
+                      if # Comment.
+                         ls .
+                         # Comment.
+                      then
+                        # Comment.
+                        ls .
+                        # Comment.
+                      else
+                        # Comment.
+                        ls /
+                        # Comment.
+                      fi
                       # Comment.
-                   then
-                     # Comment.
-                     ls .
-                     # Comment.
-                   else
-                     # Comment.
-                     ls /
-                     # Comment.
-                   fi
-                   # Comment.
-             do
-               # Comment.
-               echo ok
-               # Comment.
-             done
-             # Comment.
-             ) mid <( # Comment.
-                      while # Comment.
-                            if # Comment.
-                               ls .
-                               # Comment.
-                            then
-                              # Comment.
-                              ls .
-                              # Comment.
-                            else
-                              # Comment.
-                              ls /
-                              # Comment.
-                            fi
+                do
+                  # Comment.
+                  echo ok
+                  # Comment.
+                done
+                # Comment.
+                )" mid <( # Comment.
+                          while # Comment.
+                                if # Comment.
+                                   ls .
+                                   # Comment.
+                                then
+                                  # Comment.
+                                  ls .
+                                  # Comment.
+                                else
+                                  # Comment.
+                                  ls /
+                                  # Comment.
+                                fi
+                                # Comment.
+                          do
                             # Comment.
-                      do
-                        # Comment.
-                        echo ok
-                        # Comment.
-                      done
-                      # Comment.
-                      ) after
-#<echo
+                            echo ok
+                            # Comment.
+                          done
+                          # Comment.
+                          ) after
+#-echo
+
 

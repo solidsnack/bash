@@ -69,9 +69,9 @@ instance (Annotation t) => PP (Expression t) where
   pp (ArrayLength ident)     =  (word . quote . braces)
                                 ('#' `cons` bytes ident `append` "[@]")
   pp (Concat expr0 expr1)    =  wordcat [bytes expr0, bytes expr1]
-  pp (Eval ann)              =  inlineEvalPrinter '$' ann
-  pp (ProcessIn ann)         =  inlineEvalPrinter '<' ann
-  pp (ProcessOut ann)        =  inlineEvalPrinter '>' ann
+  pp (Eval ann)              =  inlineEvalPrinter "\"$(" ")\"" ann
+  pp (ProcessIn ann)         =  inlineEvalPrinter "<(" ")" ann
+  pp (ProcessOut ann)        =  inlineEvalPrinter ">(" ")" ann
 instance (Annotation t) => PP (Annotated t) where
   pp (Annotated t stmt)      =  annotate t stmt
 instance (Annotation t) => PP (Statement t) where
@@ -179,10 +179,10 @@ finalLineLength b            =  case lines b of
   [ ]                       ->  0
   h:t                       ->  (fromIntegral . length . List.last) (h:t)
 
-inlineEvalPrinter symbol ann =  do
+inlineEvalPrinter open close ann =  do
   indentPadToNextWord
-  hang (cons symbol "(")
+  hang open
   pp ann
-  word ")"
+  word close
   outdent >> outdent
 
