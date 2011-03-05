@@ -42,7 +42,9 @@ instance PP Identifier where
   pp (Identifier b)          =  word b
 instance PP SpecialVar where
   pp                         =  word . specialVarBytes
-instance PP Expression where
+instance PP FileDescriptor where
+  pp (FileDescriptor w)      =  (word . pack . show) w
+instance (Annotation t) => PP (Expression t) where
   pp (Literal lit)           =  word (Esc.bytes lit)
   pp Asterisk                =  word "*"
   pp QuestionMark            =  word "?"
@@ -66,14 +68,14 @@ instance PP Expression where
   pp (ArrayLength ident)     =  (word . quote . braces)
                                 ('#' `cons` bytes ident `append` "[@]")
   pp (Concat expr0 expr1)    =  wordcat [bytes expr0, bytes expr1]
-instance PP FileDescriptor where
-  pp (FileDescriptor w)      =  (word . pack . show) w
+  pp (Eval stmt)             =  hang "$(" >> pp stmt >> word ")"
+  pp (ProcessSubstitution stmt) = hang "<(" >> pp stmt >> word ")"
 instance (Annotation t) => PP (Annotated t) where
   pp (Annotated t stmt)      =  annotate t stmt
 instance (Annotation t) => PP (Statement t) where
   pp term                    =  case term of
-    SimpleCommand cmd args  ->  do hang (bytes cmd)
-                                   mapM_ (breakline . bytes) args
+    SimpleCommand cmd args  ->  do hangMultiline cmd
+                                   mapM_ breakline args
                                    outdent
     NoOp msg | null msg     ->  word ":"
              | otherwise    ->  word ":" >> (word . Esc.bytes . Esc.bash) msg
@@ -95,7 +97,7 @@ instance (Annotation t) => PP (Statement t) where
                                    inword "else"       >> pp t''
                                    outword "fi"
     For var vals t          ->  do hang (concat ["for ", bytes var, " in"])
-                                   mapM_ (breakline . bytes) vals 
+                                   mapM_ breakline vals 
                                    outdent >> nl
                                    inword "do" >> pp t >> outword "done"
     Case expr cases         ->  do word "case" >> pp expr >> inword "in"
@@ -153,4 +155,19 @@ binGrp a@(Annotated _ stmt)  =  case stmt of
 redirectGrp a@(Annotated _ stmt) = case stmt of
   Redirect _ _ _ _          ->  curlyOpen >> pp a >> curlyClose
   _                         ->  binGrp a
+
+breakline                   ::  (PP t) => t -> State PPState ()
+breakline printable          =  do
+  PPState{..}               <-  get
+  when (columns + maxLineLength printed + 1 > 79 && columns /= sum indents)
+       (opM [Word "\\", Newline])
+  pp printable
+ where
+  printed                    =  bytes printable
+
+hangMultiline printable      =  do
+  pp printable
+  opM [Indent (finalLineLength printed + 1)]
+ where
+  printed                    =  bytes printable
 

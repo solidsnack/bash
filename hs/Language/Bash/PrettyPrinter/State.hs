@@ -9,7 +9,7 @@ module Language.Bash.PrettyPrinter.State where
 
 import qualified Data.List as List
 import Data.Monoid
-import Prelude hiding (round, concat, length, replicate)
+import Prelude hiding (lines, round, concat, length, replicate)
 import Data.Binary.Builder (Builder, toLazyByteString)
 import qualified Data.Binary.Builder as Builder
 import Data.ByteString.Char8 hiding (null)
@@ -114,12 +114,11 @@ roundOpen                    =  opM [Round True]
 roundClose                  ::  State PPState ()
 roundClose                   =  opM [Round False]
 
-breakline                   ::  ByteString -> State PPState ()
-breakline b                  =  do
-  PPState{..}               <-  get
-  if columns + cast (length b) + 1 > 79 && columns /= sum indents
-    then  opM [Word "\\", Newline, Word b]
-    else  opM [Word b]
-
 cast                         =  fromIntegral
+
+maxLineLength                =  cast . List.foldl' max 0 . fmap length . lines
+
+finalLineLength b            =  case lines b of
+  [ ]                       ->  0
+  h:t                       ->  (cast . length . List.last) (h:t)
 

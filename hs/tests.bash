@@ -184,4 +184,7 @@ then
   echo b
 fi
 
+#> let remWhile = fmap (const (Lines ["# Comment."] [])) whileStmt
+#> let echoWhile = echoRem [Eval remWhile, "between", Eval remWhile, "after"]
+#> render echoWhile
 
