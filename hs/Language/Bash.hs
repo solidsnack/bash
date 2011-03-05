@@ -3,7 +3,7 @@
 
     This module is meant to be imported qualified -- perhaps as @Bash@ -- and
     contains everything you need to build and render Bash scripts. For
-    examples of usage, look at 'Language.Bash.Utils'.
+    examples of usage, look at 'Language.Bash.Lib'.
 
  -}
 module Language.Bash
@@ -23,9 +23,10 @@ module Language.Bash
   , Language.Bash.PrettyPrinter.State.PPState()
   , Language.Bash.PrettyPrinter.State.render
   , Language.Bash.PrettyPrinter.State.nlCol
-  , module Language.Bash.Annotations
   , Language.Bash.Script.script
   , Language.Bash.Script.script_sha1
+  , module Language.Bash.Annotations
+  , module Language.Bash.Lib
   ) where
 
 import Language.Bash.Syntax

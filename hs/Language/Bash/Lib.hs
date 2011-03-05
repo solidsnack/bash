@@ -3,7 +3,7 @@
   #-}
 {-| Shortcuts for Bash generation that also demonstrate use of the library.
  -}
-module Language.Bash.Util where
+module Language.Bash.Lib where
 
 import Data.ByteString.Char8 (ByteString, pack)
 

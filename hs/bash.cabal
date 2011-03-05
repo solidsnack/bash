@@ -14,7 +14,7 @@ description                   :
 cabal-version                 : >= 1.6
 build-type                    : Simple
 extra-source-files            : README
-                              , test/tests.bash
+                              , tests.bash
 
 library
   build-depends               : base >= 2 && <= 5
@@ -31,4 +31,5 @@ library
                                 Language.Bash.PrettyPrinter
                                 Language.Bash.PrettyPrinter.State
                                 Language.Bash.Annotations
+                                Language.Bash.Lib
 
