@@ -190,4 +190,52 @@ fi
 #> let evalEcho = Eval (echoRem ["before"])
 #> let echoWhile = echoRem [evalEcho, evalWhile, "mid", processWhile, "after"]
 #> render echoWhile
+#>echo
+echo $( #>echo
+        echo before
+        #<echo
+        ) $( # Comment.
+             while # Comment.
+                   if # Comment.
+                      ls .
+                      # Comment.
+                   then
+                     # Comment.
+                     ls .
+                     # Comment.
+                   else
+                     # Comment.
+                     ls /
+                     # Comment.
+                   fi
+                   # Comment.
+             do
+               # Comment.
+               echo ok
+               # Comment.
+             done
+             # Comment.
+             ) mid <( # Comment.
+                      while # Comment.
+                            if # Comment.
+                               ls .
+                               # Comment.
+                            then
+                              # Comment.
+                              ls .
+                              # Comment.
+                            else
+                              # Comment.
+                              ls /
+                              # Comment.
+                            fi
+                            # Comment.
+                      do
+                        # Comment.
+                        echo ok
+                        # Comment.
+                      done
+                      # Comment.
+                      ) after
+#<echo
 
