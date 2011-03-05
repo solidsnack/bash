@@ -1,5 +1,10 @@
 {-| Types and functions for generation of Bash scripts, with safe escaping
     and composition of a large subset of Bash statements and expressions.
+
+    This module is meant to be imported qualified -- perhaps as @Bash@ -- and
+    contains everything you need to build and render Bash scripts. For
+    examples of usage, look at 'Language.Bash.Utils'.
+
  -}
 module Language.Bash
   ( Language.Bash.Syntax.Statement(..)
