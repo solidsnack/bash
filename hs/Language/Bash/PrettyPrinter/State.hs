@@ -27,7 +27,7 @@ data PPState                 =  PPState { indents :: [Word]
                                         , columns :: Word
                                         , string :: Builder }
 instance Show PPState where
-  show state@PPState{..}     =  "PPState { indents=" ++ show indents
+  show PPState{..}           =  "PPState { indents=" ++ show indents
                                       ++ " curly="   ++ show curly
                                       ++ " round="   ++ show round
                                       ++ " columns=" ++ show columns
