@@ -246,4 +246,8 @@ echo "$( #+echo
 #> let seq4 = Annotated () (SimpleCommand "seq" ["1","4"])
 #> let forSeq = For varX [Eval seq4, EvalUnquoted seq4] echoX
 #> render (Annotated () forSeq)
+for x in "$( seq 1 4 )" $( seq 1 4 )
+do
+  echo "$x" ---- "${#x}"
+done
 
