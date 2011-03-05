@@ -10,6 +10,7 @@
  -}
 module Language.Bash.PrettyPrinter where
 
+import qualified Data.List as List
 import Data.Word (Word8)
 import Data.ByteString.Char8
 import Data.Binary.Builder (Builder)
@@ -68,8 +69,9 @@ instance (Annotation t) => PP (Expression t) where
   pp (ArrayLength ident)     =  (word . quote . braces)
                                 ('#' `cons` bytes ident `append` "[@]")
   pp (Concat expr0 expr1)    =  wordcat [bytes expr0, bytes expr1]
-  pp (Eval stmt)             =  hang "$(" >> pp stmt >> word ")"
-  pp (ProcessSubstitution stmt) = hang "<(" >> pp stmt >> word ")"
+  pp (Eval ann)              =  inlineEvalPrinter '$' ann
+  pp (ProcessIn ann)         =  inlineEvalPrinter '<' ann
+  pp (ProcessOut ann)        =  inlineEvalPrinter '>' ann
 instance (Annotation t) => PP (Annotated t) where
   pp (Annotated t stmt)      =  annotate t stmt
 instance (Annotation t) => PP (Statement t) where
@@ -170,4 +172,17 @@ hangMultiline printable      =  do
   opM [Indent (finalLineLength printed + 1)]
  where
   printed                    =  bytes printable
+
+maxLineLength = fromIntegral . List.foldl' max 0 . fmap length . lines
+
+finalLineLength b            =  case lines b of
+  [ ]                       ->  0
+  h:t                       ->  (fromIntegral . length . List.last) (h:t)
+
+inlineEvalPrinter symbol ann =  do
+  indentPadToNextWord
+  hang (cons symbol "(")
+  pp ann
+  word ")"
+  outdent >> outdent
 

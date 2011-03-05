@@ -113,12 +113,14 @@ roundOpen                   ::  State PPState ()
 roundOpen                    =  opM [Round True]
 roundClose                  ::  State PPState ()
 roundClose                   =  opM [Round False]
+indentPadToNextWord         ::  State PPState ()
+indentPadToNextWord          =  do
+  PPState{..}               <-  get
+  let x                      =  sum indents
+      columns'               =  columns + 1
+      indent | columns' > x  =  columns' - x
+             | otherwise     =  0
+  opM [Indent indent]
 
 cast                         =  fromIntegral
-
-maxLineLength                =  cast . List.foldl' max 0 . fmap length . lines
-
-finalLineLength b            =  case lines b of
-  [ ]                       ->  0
-  h:t                       ->  (cast . length . List.last) (h:t)
 

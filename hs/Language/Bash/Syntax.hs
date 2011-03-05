@@ -131,7 +131,8 @@ data Expression t            =  Literal Esc.Bash
                              |  ArrayLength Identifier
                              |  Concat (Expression t) (Expression t)
                              |  Eval (Annotated t)
-                             |  ProcessSubstitution (Annotated t)
+                             |  ProcessIn (Annotated t)
+                             |  ProcessOut (Annotated t)
 -- TODO                      |  IndirectExpansion Identifier
 -- TODO                      |  Substring, Replacement, &c.
 deriving instance (Eq t) => Eq (Expression t)
@@ -155,7 +156,8 @@ instance Functor Expression where
     ArrayLength ident       ->  ArrayLength ident
     Concat expr expr'       ->  Concat (fmap f expr) (fmap f expr')
     Eval ann                ->  Eval (fmap f ann)
-    ProcessSubstitution ann ->  ProcessSubstitution (fmap f ann)
+    ProcessIn ann           ->  ProcessIn (fmap f ann)
+    ProcessOut ann          ->  ProcessOut (fmap f ann)
 instance Foldable Expression where
   foldMap f expr             =  case expr of
     Literal _               ->  mempty
@@ -172,7 +174,8 @@ instance Foldable Expression where
     ArrayLength _           ->  mempty
     Concat expr expr'       ->  foldMap f expr `mappend` foldMap f expr'
     Eval ann                ->  foldMap f ann
-    ProcessSubstitution ann ->  foldMap f ann
+    ProcessIn ann           ->  foldMap f ann
+    ProcessOut ann          ->  foldMap f ann
 
 literal                     ::  ByteString -> Expression t
 literal                      =  Literal . Esc.bash
