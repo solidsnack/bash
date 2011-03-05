@@ -239,4 +239,11 @@ echo "$( #+echo
                           ) after
 #-echo
 
+#> let (varX :: Identifier) = "x"
+#> let readX = ReadVar (Right varX)
+#> let lengthX = Length (Right varX)
+#> let echoX = Annotated () (SimpleCommand "echo" [readX, "----", lengthX])
+#> let seq4 = Annotated () (SimpleCommand "seq" ["1","4"])
+#> let forSeq = For varX [Eval seq4, EvalUnquoted seq4] echoX
+#> render (Annotated () forSeq)
 

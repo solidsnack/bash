@@ -127,10 +127,11 @@ data Expression t            =  Literal Esc.Bash
                              |  ARGVElements
                              |  ARGVLength
                              |  Elements Identifier
-                             |  Length Identifier
+                             |  Length (Either SpecialVar Identifier)
                              |  ArrayLength Identifier
                              |  Concat (Expression t) (Expression t)
                              |  Eval (Annotated t)
+                             |  EvalUnquoted (Annotated t)
                              |  ProcessIn (Annotated t)
                              |  ProcessOut (Annotated t)
 -- TODO                      |  IndirectExpansion Identifier
@@ -156,6 +157,7 @@ instance Functor Expression where
     ArrayLength ident       ->  ArrayLength ident
     Concat expr expr'       ->  Concat (fmap f expr) (fmap f expr')
     Eval ann                ->  Eval (fmap f ann)
+    EvalUnquoted ann        ->  EvalUnquoted (fmap f ann)
     ProcessIn ann           ->  ProcessIn (fmap f ann)
     ProcessOut ann          ->  ProcessOut (fmap f ann)
 instance Foldable Expression where
@@ -174,6 +176,7 @@ instance Foldable Expression where
     ArrayLength _           ->  mempty
     Concat expr expr'       ->  foldMap f expr `mappend` foldMap f expr'
     Eval ann                ->  foldMap f ann
+    EvalUnquoted ann        ->  foldMap f ann
     ProcessIn ann           ->  foldMap f ann
     ProcessOut ann          ->  foldMap f ann
 

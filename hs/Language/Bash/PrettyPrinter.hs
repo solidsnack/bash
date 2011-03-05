@@ -65,11 +65,12 @@ instance (Annotation t) => PP (Expression t) where
   pp (Elements ident)        =  (word . quote . braces)
                                 (bytes ident `append` "[@]")
   pp (Length ident)          =  (word . quote . braces)
-                                ('#' `cons` bytes ident)
+                                ('#' `cons` identpart ident)
   pp (ArrayLength ident)     =  (word . quote . braces)
                                 ('#' `cons` bytes ident `append` "[@]")
   pp (Concat expr0 expr1)    =  wordcat [bytes expr0, bytes expr1]
   pp (Eval ann)              =  inlineEvalPrinter "\"$(" ")\"" ann
+  pp (EvalUnquoted ann)      =  inlineEvalPrinter "$(" ")" ann
   pp (ProcessIn ann)         =  inlineEvalPrinter "<(" ")" ann
   pp (ProcessOut ann)        =  inlineEvalPrinter ">(" ")" ann
 instance (Annotation t) => PP (Annotated t) where

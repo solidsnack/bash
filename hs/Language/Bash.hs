@@ -34,4 +34,5 @@ import Language.Bash.PrettyPrinter
 import Language.Bash.PrettyPrinter.State
 import Language.Bash.Annotations
 import Language.Bash.Script
+import Language.Bash.Lib
 
