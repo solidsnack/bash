@@ -11,10 +11,16 @@ import Data.ByteString.Char8 (ByteString, pack)
 import Language.Bash.Syntax
 
 
+{-| Create a simple command from expressions.
+ -}
 cmd                         ::  Expression t -> [Expression t] -> Statement t
 cmd expr exprs               =  SimpleCommand expr exprs
 
 
+{-| Declare or assign an array to a @sed@ command line that will use extended
+    regular expressions, checking for GNU or BSD @sed@. The 'Bool' argument
+    determines whether to insert the declaration or not.
+ -}
 esed :: (Monoid m) => Identifier -> Bool -> Annotated m
 esed ident d | not d         =  setGNUorBSD
              | otherwise     =  ann_ (Sequence decl setGNUorBSD)
@@ -29,6 +35,17 @@ esed ident d | not d         =  setGNUorBSD
     , IfThenElse checkGNU setr setE ]
 
 
+{-| A set statement that covers a few error handling options, setting
+    @errexit@, @nounset@ and @pipefail@.
+ -}
+setSafe                     ::  Statement t
+setSafe                      =  SimpleCommand "set" [ "-o", "errexit"
+                                                    , "-o", "nounset"
+                                                    , "-o", "pipefail" ]
+
+
+{-| Annotate a statement with the 0 value of a monoid.
+ -}
 ann_                        ::  (Monoid m) => Statement m -> Annotated m
 ann_                         =  Annotated mempty
 

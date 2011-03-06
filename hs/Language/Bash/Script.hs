@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings
            , ScopedTypeVariables
   #-}
-{-| Utilities for turning statements into scripts and script fragments. 
+{-| Utilities for turning statements into full scripts.
  -}
 module Language.Bash.Script where
 
@@ -15,6 +15,7 @@ import Data.Monoid
 import qualified Data.Digest.Pure.SHA
 
 import Language.Bash.Syntax
+import Language.Bash.Lib
 import Language.Bash.Annotations
 import Language.Bash.PrettyPrinter
 import Language.Bash.PrettyPrinter.State
@@ -55,15 +56,6 @@ script_sha1 docs setup main  =  mconcat [ fromByteString "#!/bin/bash\n\n"
   tokenCheck'                =  tokenCheck token mainSafe
   remarks | docs == mempty   =  fromByteString ""
           | otherwise        =  fromByteString (docs `mappend` "\n\n")
-
-
-{-| A set statement that covers a few error handling options, setting
-    @errexit@, @nounset@ and @pipefail@.
- -}
-setSafe                     ::  Statement t
-setSafe                      =  SimpleCommand "set" [ "-o", "errexit"
-                                                    , "-o", "nounset"
-                                                    , "-o", "pipefail" ]
 
 
 {-| Scan @$0@ for the token before running, producing a statement annotated
