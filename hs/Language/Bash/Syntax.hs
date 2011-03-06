@@ -20,7 +20,8 @@ import Data.Monoid
 import qualified Text.ShellEscape as Esc
 
 
-data Annotated t             =  Annotated t (Statement t)
+data Annotated t             =  Annotated { annotation :: t
+                                          , statement :: Statement t }
 deriving instance (Eq t) => Eq (Annotated t)
 deriving instance (Ord t) => Ord (Annotated t)
 deriving instance (Show t) => Show (Annotated t)
@@ -49,6 +50,9 @@ data Statement t
   | Until           (Annotated t)       (Annotated t)
 --  BraceBrace      (ConditionalExpression t)
   | VarAssign       Identifier          (Expression t)
+  | ArrayDecl       Identifier          [Expression t]
+  | ArrayUpdate     Identifier          (Expression t)      (Expression t)
+  | ArrayAssign     Identifier          [Expression t]
   | DictDecl        Identifier          [(Identifier, Expression t)]
   | DictUpdate      Identifier          (Expression t)      (Expression t)
   | DictAssign      Identifier          [(Expression t, Expression t)]
@@ -78,6 +82,9 @@ instance Functor Statement where
     Until ann ann'          ->  Until (f' ann) (f' ann')
 --  BraceBrace      (ConditionalExpression t)
     VarAssign ident expr    ->  VarAssign ident (f' expr)
+    ArrayDecl ident assigns ->  ArrayDecl ident (fmap f' assigns)
+    ArrayUpdate ident a b   ->  ArrayUpdate ident (f' a) (f' b)
+    ArrayAssign ident assigns -> ArrayAssign ident (fmap f' assigns)
     DictDecl ident assigns  ->  DictDecl ident (fmap (id *** f') assigns)
     DictUpdate ident a b    ->  DictUpdate ident (f' a) (f' b)
     DictAssign ident assigns -> DictAssign ident (fmap (f' *** f') assigns)
@@ -107,6 +114,9 @@ instance Foldable Statement where
     Until ann ann'          ->  f' ann `mappend` f' ann'
 --  BraceBrace      ConditionalExpression
     VarAssign _ expr        ->  f' expr
+    ArrayDecl _ assigns     ->  foldMap f' assigns
+    ArrayUpdate _ a b       ->  f' a `mappend` f' b
+    ArrayAssign _ assigns   ->  foldMap f' assigns
     DictDecl _ assigns      ->  foldMap (f' . snd) assigns
     DictUpdate _ a b        ->  f' a `mappend` f' b
     DictAssign _ assigns    ->  foldMap foldMapPair assigns

@@ -112,18 +112,32 @@ instance (Annotation t) => PP (Statement t) where
                                    inword "do" >> pp t' >> outword "done"
 --  BraceBrace _            ->  error "[[ ]]"
     VarAssign var val       ->  pp var >> word "=" >> pp val
-    DictDecl var pairs      ->  do wordcat ["declare -A ", bytes var, "=("]
-                                   nl >> mapM_ arrayset pairs
-                                   nl >> word ")"
-    DictUpdate var key val  ->  do pp var >> word "["
-                                   pp key >> word "]="
-                                   pp val
-    DictAssign var pairs    ->  do pp var >> word "=(" >> nl
-                                   mapM_ arrayset pairs >> word ")"
+    ArrayDecl var exprs     ->  do hangcat ["declare -a ", bytes var, "=("]
+                                   array_pp pp exprs >> word ")"
+                                   nl >> outdent
+    ArrayUpdate var key val ->  pp (DictUpdate var key val)
+    ArrayAssign var exprs   ->  do hangcat [bytes var, "=("]
+                                   array_pp pp exprs >> word ")"
+                                   nl >> outdent
+    DictDecl var pairs      ->  do hangcat ["declare -A ", bytes var, "=("]
+                                   array_pp keyset pairs >> word ")"
+                                   nl >> outdent
+    DictUpdate var key val  ->  do hangcat [bytes var, "[", bytes key, "]="]
+                                   pp val >> outdent
+    DictAssign var pairs    ->  do hangcat [bytes var, "=("]
+                                   array_pp keyset pairs
+                                   nl >> outdent >> word ")"
     Redirect stmt d fd t    ->  do redirectGrp stmt
                                    word (render_redirect d fd t)
 
-arrayset (key, val) = word "[" >> pp key >> word "]=" >> pp val >> nl
+hangcat                      =  hang . concat
+
+array_pp ppF [   ]           =  return ()
+array_pp ppF (h:t)           =  ppF h >> mapM_ ppFNL t
+ where
+  ppFNL x                    =  nl >> ppF x
+
+keyset (key, val) = word "[" >> pp key >> word "]=" >> pp val
 
 case_clause (ptrn, stmt)     =  do hang (bytes ptrn `append` ") ")
                                    pp stmt >> word ";;" >> outdent >> nl
@@ -186,4 +200,5 @@ inlineEvalPrinter open close ann =  do
   pp ann
   word close
   outdent >> outdent
+
 
