@@ -21,9 +21,14 @@ build-type                    : Simple
 extra-source-files            : README
                               , tests.bash
 
+flag split-base
+
 library
-  build-depends               : base >= 2 && <= 5
-                              , containers
+  if flag(split-base)
+    build-depends             : base >= 4 && < 5
+  else
+    build-depends             : base < 4
+  build-depends               : containers
                               , bytestring >= 0.9
                               , shell-escape >= 0.1.1
                               , binary >= 0.5.0.2
