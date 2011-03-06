@@ -3,7 +3,7 @@
 
     This module is meant to be imported qualified -- perhaps as @Bash@ -- and
     contains everything you need to build and render Bash scripts. For
-    examples of usage, look at 'Language.Bash.Lib'.
+    examples of usage, look at "Language.Bash.Lib".
 
  -}
 module Language.Bash

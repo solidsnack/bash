@@ -10,6 +10,11 @@ synopsis                      : Bash generation library.
 description                   :
   A library for generation of Bash scripts, handling escaping, statement
   grouping and expression formation at a high level.
+  .
+  The top-level module, Language.Bash, is all you need to import to access the
+  package's functionality. The module Language.Bash.Lib contains some
+  examples, as does the test script, tests.bash, included with the source
+  distribution.
 
 cabal-version                 : >= 1.6
 build-type                    : Simple

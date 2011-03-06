@@ -35,6 +35,23 @@ esed ident d | not d         =  setGNUorBSD
     , IfThenElse checkGNU setr setE ]
 
 
+{-| Perform a statement for integer values ranging from the first integral
+    parameter to the second, using @seq@.
+ -}
+for
+ :: (Monoid m, Integral i)
+ => Identifier -> i -> i -> Annotated m -> Statement m
+for ident a z ann            =  For ident [EvalUnquoted (ann_ (seqAZ a z))] ann
+
+
+{-| Evaluate @seq@ for the given arguments.
+ -}
+seqAZ                       ::  (Integral i) => i -> i -> Statement t
+seqAZ a z                    =  SimpleCommand "seq" [lshow a, lshow z]
+ where
+  lshow                      =  literal . pack . show
+
+
 {-| A set statement that covers a few error handling options, setting
     @errexit@, @nounset@ and @pipefail@.
  -}

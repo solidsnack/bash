@@ -4,7 +4,11 @@
            , GeneralizedNewtypeDeriving
            , NoMonomorphismRestriction
   #-}
-
+{-| Bash statements and expressions. The statement tree is a functor,
+    supporting arbitrary annotations; this is intended to support analysis of
+    effects and privilege levels as well as commenting and arbitrary code
+    inclusion.
+ -}
 module Language.Bash.Syntax where
 
 import Prelude hiding (all)
@@ -20,6 +24,9 @@ import Data.Monoid
 import qualified Text.ShellEscape as Esc
 
 
+{-| The 'Annotated' type captures the annotatedness of a tree of Bash
+    statements. It is 'Foldable' and a 'Functor'.
+ -}
 data Annotated t             =  Annotated { annotation :: t
                                           , statement :: Statement t }
 deriving instance (Eq t) => Eq (Annotated t)
@@ -30,6 +37,10 @@ instance Functor Annotated where
 instance Foldable Annotated where
   foldMap f (Annotated t stmt) = f t `mappend` foldMap f stmt
 
+{-| The 'Statement' type captures the different kind of statements that may
+    exist in a Bash statement tree. It is mutually recursive with 'Annotated'.
+    It is a 'Foldable' and a 'Functor'.
+ -}
 data Statement t
   = SimpleCommand   (Expression t)      [Expression t]
   | NoOp            ByteString
@@ -127,6 +138,9 @@ instance Foldable Statement where
     foldMapExprFD (Right  _)  = mempty
     foldMapPair (x, y)       =  f' x `mappend` f' y
 
+{-| The type of Bash expressions, handling many kinds of variable reference as
+    well as eval and process substitution. It is 'Foldable' and a 'Functor'.
+ -}
 data Expression t            =  Literal Esc.Bash
                              |  Asterisk
                              |  QuestionMark
@@ -190,9 +204,14 @@ instance Foldable Expression where
     ProcessIn ann           ->  foldMap f ann
     ProcessOut ann          ->  foldMap f ann
 
+{-| Escape a 'ByteString' to produce a literal expression.
+ -}
 literal                     ::  ByteString -> Expression t
 literal                      =  Literal . Esc.bash
 
+{-| The type of legal Bash identifiers, strings beginning with letters or @_@
+    and containing letters, @_@ and digits.
+ -}
 newtype Identifier           =  Identifier ByteString
 deriving instance Eq Identifier
 deriving instance Ord Identifier
@@ -200,6 +219,8 @@ deriving instance Show Identifier
 instance IsString Identifier where
   fromString                 =  fromJust . identifier . fromString
 
+{-| Produce an 'Identifier' from a 'ByteString' of legal format.
+ -}
 identifier                  ::  ByteString -> Maybe Identifier
 identifier bytes             =  do
   (c, bytes')               <-  uncons bytes
@@ -210,20 +231,25 @@ identifier bytes             =  do
   okayTail c                 =  (isAlphaNum c || c == '_') && isAscii c
   okayHead c                 =  (isAlpha c || c == '_') && isAscii c
 
-
+{-| A file descriptor in Bash is simply a number between 0 and 255.
+ -}
 newtype FileDescriptor       =  FileDescriptor Word8
 deriving instance Eq FileDescriptor
 deriving instance Ord FileDescriptor
 deriving instance Num FileDescriptor
 deriving instance Show FileDescriptor
 
-
-data Redirection             =  In | Out | Append
+{-| Redirection \"directions\".
+ -}
+data Redirection             =  In -- ^ Input redirection, @<@.
+                             |  Out -- ^ Output redirection, @>@.
+                             |  Append -- ^ Appending output, @>>@.
 deriving instance Eq Redirection
 deriving instance Ord Redirection
 deriving instance Show Redirection
 
-
+{-| Unused at present.
+ -}
 data ConditionalExpression t
   = File_a          (Expression t)
   | File_b          (Expression t)
@@ -270,6 +296,9 @@ deriving instance (Eq t) => Eq (ConditionalExpression t)
 deriving instance (Ord t) => Ord (ConditionalExpression t)
 deriving instance (Show t) => Show (ConditionalExpression t)
 
+{-| The names of special variables, with otherwise illegal identifiers, are
+    represented by this type.
+ -}
 data SpecialVar
   = DollarQuestion | Dollar0 | Dollar1 | Dollar2 | Dollar3 | Dollar4
                    | Dollar5 | Dollar6 | Dollar7 | Dollar8 | Dollar9
@@ -279,6 +308,8 @@ deriving instance Show SpecialVar
 instance IsString SpecialVar where
   fromString                 =  fromJust . specialVar . fromString
 
+{-| Try to render a 'SpecialVar' from a 'ByteString'.
+ -}
 specialVar                  ::  ByteString -> Maybe SpecialVar
 specialVar b | "$?" == b     =  Just DollarQuestion
              | "$0" == b     =  Just Dollar0

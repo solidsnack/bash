@@ -100,7 +100,7 @@ instance (Annotation t) => PP (Statement t) where
                                    inword "else"       >> pp t''
                                    outword "fi"
     For var vals t          ->  do hang (concat ["for ", bytes var, " in"])
-                                   mapM_ breakline vals 
+                                   mapM_ breakline vals
                                    outdent >> nl
                                    inword "do" >> pp t >> outword "done"
     Case expr cases         ->  do word "case" >> pp expr >> inword "in"
