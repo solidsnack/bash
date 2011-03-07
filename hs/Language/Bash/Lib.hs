@@ -61,6 +61,16 @@ setSafe                      =  SimpleCommand "set" [ "-o", "errexit"
                                                     , "-o", "pipefail" ]
 
 
+{-| A statement that allows one to redirect output to a file as root. This is
+    what you might expect @sudo echo x > privileged_file@ would do (though
+    that does not actually work).
+ -}
+sudo_write                  ::  (Monoid m) => Expression m -> Statement m
+sudo_write path              =  Redirect (ann_ tee) Out 1 (Left "/dev/null")
+ where
+  tee                        =  SimpleCommand "sudo" ["tee", path]
+
+
 {-| Annotate a statement with the 0 value of a monoid.
  -}
 ann_                        ::  (Monoid m) => Statement m -> Annotated m
