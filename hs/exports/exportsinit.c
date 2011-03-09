@@ -5,9 +5,9 @@
 extern void __stginit_LanguageBashExports(void);
 
 void
-LanguageBashExports_init() {
+LanguageBashExports_init(void) {
   int argc = 0;
-  char *argv[] = {};
+  char **argv[] = {""};
   hs_init(&argc, &argv);
 #ifdef __GLASGOW_HASKELL__
   hs_add_root(__stginit_LanguageBashExports);
@@ -15,7 +15,7 @@ LanguageBashExports_init() {
 }
 
 void
-LanguageBashExports_end() {
+LanguageBashExports_end(void) {
   hs_exit();
 }
 
