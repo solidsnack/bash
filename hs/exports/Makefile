@@ -33,12 +33,7 @@ import.gcc: import.c exports.so
 	    -L${HS_LIB} -lHSrts
 
 import.ghc: import.o exports.o
-	ghc exports.o exports_stub.o import.o -o import.ghc \
-	    -L${HS_LIB} -lHSrts \
-	    -L${HS_LIB_GHCPRIM} -lHSghc-prim-0.2.0.0 \
-	    -L${HS_LIB_INT} -lHSinteger-gmp-0.2.0.0 \
-	    -L${HS_LIB_BASE} -lHSbase-4.2.0.0 \
-	    -lffi -lrt
+	ghc exports.o exports_stub.o import.o -o import.ghc
 
 clean:
 	rm -f *_stub.c *_stub.h *.hi *.o *.so
