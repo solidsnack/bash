@@ -1,11 +1,12 @@
 #include <stdio.h>
 #include <dlfcn.h>
 
-int main(void) {
+int main(int argc, char* argv[]) {
   char* e;
-  printf("**** %s\n", "start");
+  char* so = argv[1];
+  printf("**** %s %s\n", "trying to load", so);
 
-  void *dl = dlopen("./libfoo.so", RTLD_NOW);
+  void *dl = dlopen(so, RTLD_NOW);
   e = dlerror();
   if ( e == NULL ) {
     printf("**** %s\n", ".so load okay");
