@@ -56,17 +56,20 @@ exit 0
 
 #> let ls = Annotated () . SimpleCommand "ls" . (:[])
 #> let echo = Annotated () . SimpleCommand "echo"
+#> let randomLT_ n = SimpleCommand "[" [ReadVar (Right "RANDOM"), "-lt", n, "]"]
+#> let randomLT n = Annotated () (randomLT_ n)
 #> let commented a b = Annotated (Lines a b)
 
-#> let ifStmt = Annotated () (IfThenElse (ls ".") (ls ".") (ls "/"))
+#> let ifAnn a b c = Annotated () (IfThenElse a b c)
+#> let ifStmt = ifAnn (randomLT "40000") (randomLT "10000") (randomLT "45000")
 #> let whileStmt = Annotated () (While ifStmt (echo ["ok"]))
 #> let redirectStmt = Annotated () (Redirect whileStmt Append 1 (Left "fo&o"))
 #> render redirectStmt
-while if ls .
+while if $'[' "$RANDOM" -lt 40000 $']'
       then
-        ls .
+        $'[' "$RANDOM" -lt 10000 $']'
       else
-        ls /
+        $'[' "$RANDOM" -lt 45000 $']'
       fi
 do
   echo ok
@@ -100,11 +103,11 @@ done
 #> let wfStmt = Annotated () lsWWW `AndAnd` forStmt
 #> render wfStmt
 { cd /var/www
-  while if ls .
+  while if $'[' "$RANDOM" -lt 40000 $']'
         then
-          ls .
+          $'[' "$RANDOM" -lt 10000 $']'
         else
-          ls /
+          $'[' "$RANDOM" -lt 45000 $']'
         fi
   do
     echo ok
@@ -117,11 +120,11 @@ done
 
 #> let redirected = Annotated () $ Redirect whileStmt Out 2 (Left "/err")
 #> render $ OrOr redirected forStmt
-while if ls .
+while if $'[' "$RANDOM" -lt 40000 $']'
       then
-        ls .
+        $'[' "$RANDOM" -lt 10000 $']'
       else
-        ls /
+        $'[' "$RANDOM" -lt 45000 $']'
       fi
 do
   echo ok
@@ -199,15 +202,15 @@ echo "$( #+echo
          )" "$( # Comment.
                 while # Comment.
                       if # Comment.
-                         ls .
+                         $'[' "$RANDOM" -lt 40000 $']'
                          # Comment.
                       then
                         # Comment.
-                        ls .
+                        $'[' "$RANDOM" -lt 10000 $']'
                         # Comment.
                       else
                         # Comment.
-                        ls /
+                        $'[' "$RANDOM" -lt 45000 $']'
                         # Comment.
                       fi
                       # Comment.
@@ -220,15 +223,15 @@ echo "$( #+echo
                 )" mid <( # Comment.
                           while # Comment.
                                 if # Comment.
-                                   ls .
+                                   $'[' "$RANDOM" -lt 40000 $']'
                                    # Comment.
                                 then
                                   # Comment.
-                                  ls .
+                                  $'[' "$RANDOM" -lt 10000 $']'
                                   # Comment.
                                 else
                                   # Comment.
-                                  ls /
+                                  $'[' "$RANDOM" -lt 45000 $']'
                                   # Comment.
                                 fi
                                 # Comment.
