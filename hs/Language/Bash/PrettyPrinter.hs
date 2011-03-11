@@ -49,6 +49,7 @@ instance (Annotation t) => PP (Expression t) where
   pp (Literal lit)           =  word (Esc.bytes lit)
   pp Asterisk                =  word "*"
   pp QuestionMark            =  word "?"
+  pp Tilde                   =  word "~"
   pp (ReadVar var)           =  (word . quote . ('$' `cons`) . identpart) var
   pp (ReadVarSafe var)       =  (word . quote . braces0 . identpart) var
   pp (ReadArray ident expr)  =  (word . braces)

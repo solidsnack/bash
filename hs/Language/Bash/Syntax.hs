@@ -144,6 +144,7 @@ instance Foldable Statement where
 data Expression t            =  Literal Esc.Bash
                              |  Asterisk
                              |  QuestionMark
+                             |  Tilde
                              |  ReadVar (Either SpecialVar Identifier)
                              |  ReadVarSafe (Either SpecialVar Identifier)
                              |  ReadArray Identifier (Expression t)
@@ -170,6 +171,7 @@ instance Functor Expression where
     Literal esc             ->  Literal esc
     Asterisk                ->  Asterisk
     QuestionMark            ->  QuestionMark
+    Tilde                   ->  Tilde
     ReadVar v               ->  ReadVar v
     ReadVarSafe v           ->  ReadVarSafe v
     ReadArray ident expr    ->  ReadArray ident (fmap f expr)
@@ -189,6 +191,7 @@ instance Foldable Expression where
     Literal _               ->  mempty
     Asterisk                ->  mempty
     QuestionMark            ->  mempty
+    Tilde                   ->  mempty
     ReadVar _               ->  mempty
     ReadVarSafe _           ->  mempty
     ReadArray _ expr        ->  foldMap f expr

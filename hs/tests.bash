@@ -256,3 +256,7 @@ do
   echo "$x" ---- "${#x}"
 done
 
+#> let lsRoot = ls (Concat Tilde "root")
+#> render lsRoot
+ls ~root
+
