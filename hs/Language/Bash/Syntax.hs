@@ -152,6 +152,7 @@ data Expression t            =  Literal Esc.Bash
                              |  ARGVElements
                              |  ARGVLength
                              |  Elements Identifier
+                             |  Keys Identifier
                              |  Length (Either SpecialVar Identifier)
                              |  ArrayLength Identifier
                              |  Concat (Expression t) (Expression t)
@@ -179,6 +180,7 @@ instance Functor Expression where
     ARGVElements            ->  ARGVElements
     ARGVLength              ->  ARGVLength
     Elements ident          ->  Elements ident
+    Keys ident              ->  Keys ident
     Length ident            ->  Length ident
     ArrayLength ident       ->  ArrayLength ident
     Concat expr expr'       ->  Concat (fmap f expr) (fmap f expr')
@@ -199,6 +201,7 @@ instance Foldable Expression where
     ARGVElements            ->  mempty
     ARGVLength              ->  mempty
     Elements _              ->  mempty
+    Keys _                  ->  mempty
     Length _                ->  mempty
     ArrayLength _           ->  mempty
     Concat expr expr'       ->  foldMap f expr `mappend` foldMap f expr'

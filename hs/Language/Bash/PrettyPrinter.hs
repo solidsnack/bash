@@ -65,6 +65,8 @@ instance (Annotation t) => PP (Expression t) where
   pp (ARGVLength)            =  word "$#"
   pp (Elements ident)        =  (word . quote . braces)
                                 (bytes ident `append` "[@]")
+  pp (Keys ident)            =  (word . quote . braces)
+                                ('!' `cons` bytes ident `append` "[@]")
   pp (Length ident)          =  (word . quote . braces)
                                 ('#' `cons` identpart ident)
   pp (ArrayLength ident)     =  (word . quote . braces)
@@ -133,7 +135,7 @@ instance (Annotation t) => PP (Statement t) where
 
 hangcat                      =  hang . concat
 
-array_pp ppF [   ]           =  return ()
+array_pp _   [   ]           =  return ()
 array_pp ppF (h:t)           =  ppF h >> mapM_ ppFNL t
  where
   ppFNL x                    =  nl >> ppF x
