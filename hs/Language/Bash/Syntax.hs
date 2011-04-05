@@ -25,194 +25,84 @@ import qualified Text.ShellEscape as Esc
 
 
 {-| The 'Annotated' type captures the annotatedness of a tree of Bash
-    statements. It is 'Foldable' and a 'Functor'.
+    statements.
  -}
-data Annotated t             =  Annotated { annotation :: t
-                                          , statement :: Statement t }
-deriving instance (Eq t) => Eq (Annotated t)
-deriving instance (Ord t) => Ord (Annotated t)
-deriving instance (Show t) => Show (Annotated t)
-instance Functor Annotated where
-  fmap f (Annotated t stmt)  =  Annotated (f t) (fmap f stmt)
-instance Foldable Annotated where
-  foldMap f (Annotated t stmt) = f t `mappend` foldMap f stmt
+data Annotated               =  Annotated { before    :: [ByteString]
+                                          , statement :: Statement
+                                          , after     :: [ByteString] }
+deriving instance Eq Annotated
+deriving instance Ord Annotated
+deriving instance Show Annotated
 
 {-| The 'Statement' type captures the different kind of statements that may
     exist in a Bash statement tree. It is mutually recursive with 'Annotated'.
-    It is a 'Foldable' and a 'Functor'.
  -}
-data Statement t
-  = SimpleCommand   (Expression t)      [Expression t]
+data Statement
+  = SimpleCommand   Expression          [Expression]
   | NoOp            ByteString
-  | Bang            (Annotated t)
-  | AndAnd          (Annotated t)       (Annotated t)
-  | OrOr            (Annotated t)       (Annotated t)
-  | Pipe            (Annotated t)       (Annotated t)
-  | Sequence        (Annotated t)       (Annotated t)
-  | Background      (Annotated t)       (Annotated t)
-  | Group           (Annotated t)
-  | Subshell        (Annotated t)
-  | Function        Identifier          (Annotated t)
-  | IfThen          (Annotated t)       (Annotated t)
-  | IfThenElse      (Annotated t)       (Annotated t)       (Annotated t)
-  | For             Identifier          [Expression t]      (Annotated t)
-  | Case            (Expression t)      [(Expression t, Annotated t)]
-  | While           (Annotated t)       (Annotated t)
-  | Until           (Annotated t)       (Annotated t)
---  BraceBrace      (ConditionalExpression t)
-  | VarAssign       Identifier          (Expression t)
-  | ArrayDecl       Identifier          [Expression t]
-  | ArrayUpdate     Identifier          (Expression t)      (Expression t)
-  | ArrayAssign     Identifier          [Expression t]
-  | DictDecl        Identifier          [(Identifier, Expression t)]
-  | DictUpdate      Identifier          (Expression t)      (Expression t)
-  | DictAssign      Identifier          [(Expression t, Expression t)]
-  | Redirect        (Annotated t)       Redirection
-                    FileDescriptor      (Either (Expression t) FileDescriptor)
-deriving instance (Eq t) => Eq (Statement t)
-deriving instance (Ord t) => Ord (Statement t)
-deriving instance (Show t) => Show (Statement t)
-instance Functor Statement where
-  fmap f stmt                =  case stmt of
-    SimpleCommand cmd args  ->  SimpleCommand (f' cmd) (fmap f' args)
-    NoOp b                  ->  NoOp b
-    Bang ann                ->  Bang (f' ann)
-    AndAnd ann ann'         ->  AndAnd (f' ann) (f' ann')
-    OrOr ann ann'           ->  OrOr (f' ann) (f' ann')
-    Pipe ann ann'           ->  Pipe (f' ann) (f' ann')
-    Sequence ann ann'       ->  Sequence (f' ann) (f' ann')
-    Background ann ann'     ->  Background (f' ann) (f' ann')
-    Group ann               ->  Group (f' ann)
-    Subshell ann            ->  Subshell (f' ann)
-    Function ident ann      ->  Function ident (f' ann)
-    IfThen ann ann'         ->  IfThen (f' ann) (f' ann')
-    IfThenElse a a' a''     ->  IfThenElse (f' a) (f' a') (f' a'')
-    For ident args ann      ->  For ident (fmap f' args) (f' ann)
-    Case expr cases         ->  Case (f' expr) (fmap (f' *** f') cases)
-    While ann ann'          ->  While (f' ann) (f' ann')
-    Until ann ann'          ->  Until (f' ann) (f' ann')
---  BraceBrace      (ConditionalExpression t)
-    VarAssign ident expr    ->  VarAssign ident (f' expr)
-    ArrayDecl ident assigns ->  ArrayDecl ident (fmap f' assigns)
-    ArrayUpdate ident a b   ->  ArrayUpdate ident (f' a) (f' b)
-    ArrayAssign ident assigns -> ArrayAssign ident (fmap f' assigns)
-    DictDecl ident assigns  ->  DictDecl ident (fmap (id *** f') assigns)
-    DictUpdate ident a b    ->  DictUpdate ident (f' a) (f' b)
-    DictAssign ident assigns -> DictAssign ident (fmap (f' *** f') assigns)
-    Redirect ann r fd chan  ->  Redirect (f' ann) r fd (fmapExprFD chan)
-   where
-    f'                       =  fmap f
-    fmapExprFD (Left expr)   =  Left (f' expr)
-    fmapExprFD (Right fd)    =  Right fd
-instance Foldable Statement where
-  foldMap f stmt             =  case stmt of
-    SimpleCommand cmd args  ->  f' cmd `mappend` foldMap f' args
-    NoOp _                  ->  mempty
-    Bang ann                ->  f' ann
-    AndAnd ann ann'         ->  f' ann `mappend` f' ann'
-    OrOr ann ann'           ->  f' ann `mappend` f' ann'
-    Pipe ann ann'           ->  f' ann `mappend` f' ann'
-    Sequence ann ann'       ->  f' ann `mappend` f' ann'
-    Background ann ann'     ->  f' ann `mappend` f' ann'
-    Group ann               ->  f' ann
-    Subshell ann            ->  f' ann
-    Function _ ann          ->  f' ann
-    IfThen ann ann'         ->  f' ann `mappend` f' ann'
-    IfThenElse a a' a''     ->  foldMap f' [a, a', a'']
-    For _ args ann          ->  foldMap f' args `mappend` f' ann
-    Case expr cases         ->  f' expr `mappend` foldMap foldMapPair cases
-    While ann ann'          ->  f' ann `mappend` f' ann'
-    Until ann ann'          ->  f' ann `mappend` f' ann'
---  BraceBrace      ConditionalExpression
-    VarAssign _ expr        ->  f' expr
-    ArrayDecl _ assigns     ->  foldMap f' assigns
-    ArrayUpdate _ a b       ->  f' a `mappend` f' b
-    ArrayAssign _ assigns   ->  foldMap f' assigns
-    DictDecl _ assigns      ->  foldMap (f' . snd) assigns
-    DictUpdate _ a b        ->  f' a `mappend` f' b
-    DictAssign _ assigns    ->  foldMap foldMapPair assigns
-    Redirect ann _ _ chan   ->  f' ann `mappend` foldMapExprFD chan
-   where
-    f'                       =  foldMap f
-    foldMapExprFD (Left expr) = f' expr
-    foldMapExprFD (Right  _)  = mempty
-    foldMapPair (x, y)       =  f' x `mappend` f' y
+  | Bang            Annotated
+  | AndAnd          Annotated           Annotated
+  | OrOr            Annotated           Annotated
+  | Pipe            Annotated           Annotated
+  | Sequence        Annotated           Annotated
+  | Background      Annotated           Annotated
+  | Group           Annotated
+  | Subshell        Annotated
+  | Function        Identifier          Annotated
+  | IfThen          Annotated           Annotated
+  | IfThenElse      Annotated           Annotated           Annotated
+  | For             Identifier          [Expression]        Annotated
+  | Case            Expression          [(Expression, Annotated)]
+  | While           Annotated           Annotated
+  | Until           Annotated           Annotated
+--  BraceBrace      (ConditionalExpression)
+  | VarAssign       Identifier          Expression
+  | ArrayDecl       Identifier          [Expression]
+  | ArrayUpdate     Identifier          Expression          Expression
+  | ArrayAssign     Identifier          [Expression]
+  | DictDecl        Identifier          [(Identifier, Expression)]
+  | DictUpdate      Identifier          Expression          Expression
+  | DictAssign      Identifier          [(Expression, Expression)]
+  | Redirect        Annotated           Redirection
+                    FileDescriptor      (Either Expression FileDescriptor)
+deriving instance Eq Statement
+deriving instance Ord Statement
+deriving instance Show Statement
 
 {-| The type of Bash expressions, handling many kinds of variable reference as
     well as eval and process substitution. It is 'Foldable' and a 'Functor'.
  -}
-data Expression t            =  Literal Esc.Bash
-                             |  Asterisk
-                             |  QuestionMark
-                             |  Tilde
-                             |  ReadVar (Either SpecialVar Identifier)
-                             |  ReadVarSafe (Either SpecialVar Identifier)
-                             |  ReadArray Identifier (Expression t)
-                             |  ReadArraySafe Identifier (Expression t)
-                             |  ARGVElements
-                             |  ARGVLength
-                             |  Elements Identifier
-                             |  Keys Identifier
-                             |  Length (Either SpecialVar Identifier)
-                             |  ArrayLength Identifier
-                             |  Concat (Expression t) (Expression t)
-                             |  Eval (Annotated t)
-                             |  EvalUnquoted (Annotated t)
-                             |  ProcessIn (Annotated t)
-                             |  ProcessOut (Annotated t)
+data Expression
+   = Literal        Esc.Bash
+   | Asterisk
+   | QuestionMark
+   | Tilde
+   | ReadVar        (Either SpecialVar Identifier)
+   | ReadVarSafe    (Either SpecialVar Identifier)
+   | ReadArray      Identifier          Expression
+   | ReadArraySafe  Identifier          Expression
+   | ARGVElements
+   | ARGVLength
+   | Elements       Identifier
+   | Keys           Identifier
+   | Length         (Either SpecialVar Identifier)
+   | ArrayLength    Identifier
+   | Concat         Expression          Expression
+   | Eval           Annotated
+   | EvalUnquoted   Annotated
+   | ProcessIn      Annotated
+   | ProcessOut     Annotated
 -- TODO                      |  IndirectExpansion Identifier
 -- TODO                      |  Substring, Replacement, &c.
-deriving instance (Eq t) => Eq (Expression t)
-deriving instance (Ord t) => Ord (Expression t)
-deriving instance (Show t) => Show (Expression t)
-instance IsString (Expression t) where
+deriving instance Eq Expression
+deriving instance Ord Expression
+deriving instance Show Expression
+instance IsString Expression where
   fromString                 =  literal . fromString
-instance Functor Expression where
-  fmap f expr                =  case expr of
-    Literal esc             ->  Literal esc
-    Asterisk                ->  Asterisk
-    QuestionMark            ->  QuestionMark
-    Tilde                   ->  Tilde
-    ReadVar v               ->  ReadVar v
-    ReadVarSafe v           ->  ReadVarSafe v
-    ReadArray ident expr    ->  ReadArray ident (fmap f expr)
-    ReadArraySafe ident expr -> ReadArraySafe ident (fmap f expr)
-    ARGVElements            ->  ARGVElements
-    ARGVLength              ->  ARGVLength
-    Elements ident          ->  Elements ident
-    Keys ident              ->  Keys ident
-    Length ident            ->  Length ident
-    ArrayLength ident       ->  ArrayLength ident
-    Concat expr expr'       ->  Concat (fmap f expr) (fmap f expr')
-    Eval ann                ->  Eval (fmap f ann)
-    EvalUnquoted ann        ->  EvalUnquoted (fmap f ann)
-    ProcessIn ann           ->  ProcessIn (fmap f ann)
-    ProcessOut ann          ->  ProcessOut (fmap f ann)
-instance Foldable Expression where
-  foldMap f expr             =  case expr of
-    Literal _               ->  mempty
-    Asterisk                ->  mempty
-    QuestionMark            ->  mempty
-    Tilde                   ->  mempty
-    ReadVar _               ->  mempty
-    ReadVarSafe _           ->  mempty
-    ReadArray _ expr        ->  foldMap f expr
-    ReadArraySafe _ expr    ->  foldMap f expr
-    ARGVElements            ->  mempty
-    ARGVLength              ->  mempty
-    Elements _              ->  mempty
-    Keys _                  ->  mempty
-    Length _                ->  mempty
-    ArrayLength _           ->  mempty
-    Concat expr expr'       ->  foldMap f expr `mappend` foldMap f expr'
-    Eval ann                ->  foldMap f ann
-    EvalUnquoted ann        ->  foldMap f ann
-    ProcessIn ann           ->  foldMap f ann
-    ProcessOut ann          ->  foldMap f ann
 
 {-| Escape a 'ByteString' to produce a literal expression.
  -}
-literal                     ::  ByteString -> Expression t
+literal                     ::  ByteString -> Expression
 literal                      =  Literal . Esc.bash
 
 {-| The type of legal Bash identifiers, strings beginning with letters or @_@
@@ -256,51 +146,51 @@ deriving instance Show Redirection
 
 {-| Unused at present.
  -}
-data ConditionalExpression t
-  = File_a          (Expression t)
-  | File_b          (Expression t)
-  | File_c          (Expression t)
-  | File_d          (Expression t)
-  | File_e          (Expression t)
-  | File_f          (Expression t)
-  | File_g          (Expression t)
-  | File_h          (Expression t)
-  | File_k          (Expression t)
-  | File_p          (Expression t)
-  | File_r          (Expression t)
-  | File_s          (Expression t)
-  | File_t          (Expression t)
-  | File_u          (Expression t)
-  | File_w          (Expression t)
-  | File_x          (Expression t)
-  | File_O          (Expression t)
-  | File_G          (Expression t)
-  | File_L          (Expression t)
-  | File_S          (Expression t)
-  | File_N          (Expression t)
-  | File_nt         (Expression t)      (Expression t)
-  | File_ot         (Expression t)      (Expression t)
-  | File_ef         (Expression t)      (Expression t)
-  | OptSet          (Expression t)
-  | StringEmpty     (Expression t)
-  | StringNonempty  (Expression t)
-  | StringEq        (Expression t)      (Expression t)
-  | StringNotEq     (Expression t)      (Expression t)
-  | StringLT        (Expression t)      (Expression t)
-  | StringGT        (Expression t)      (Expression t)
-  | StringRE        (Expression t)      (Expression t)
-  | NumEq           (Expression t)      (Expression t)
-  | NumNotEq        (Expression t)      (Expression t)
-  | NumLT           (Expression t)      (Expression t)
-  | NumLEq          (Expression t)      (Expression t)
-  | NumGT           (Expression t)      (Expression t)
-  | NumGEq          (Expression t)      (Expression t)
-  | Not             (Expression t)      (Expression t)
-  | And             (Expression t)      (Expression t)
-  | Or              (Expression t)      (Expression t)
-deriving instance (Eq t) => Eq (ConditionalExpression t)
-deriving instance (Ord t) => Ord (ConditionalExpression t)
-deriving instance (Show t) => Show (ConditionalExpression t)
+data ConditionalExpression
+  = File_a          Expression
+  | File_b          Expression
+  | File_c          Expression
+  | File_d          Expression
+  | File_e          Expression
+  | File_f          Expression
+  | File_g          Expression
+  | File_h          Expression
+  | File_k          Expression
+  | File_p          Expression
+  | File_r          Expression
+  | File_s          Expression
+  | File_t          Expression
+  | File_u          Expression
+  | File_w          Expression
+  | File_x          Expression
+  | File_O          Expression
+  | File_G          Expression
+  | File_L          Expression
+  | File_S          Expression
+  | File_N          Expression
+  | File_nt         Expression          Expression
+  | File_ot         Expression          Expression
+  | File_ef         Expression          Expression
+  | OptSet          Expression
+  | StringEmpty     Expression
+  | StringNonempty  Expression
+  | StringEq        Expression          Expression
+  | StringNotEq     Expression          Expression
+  | StringLT        Expression          Expression
+  | StringGT        Expression          Expression
+  | StringRE        Expression          Expression
+  | NumEq           Expression          Expression
+  | NumNotEq        Expression          Expression
+  | NumLT           Expression          Expression
+  | NumLEq          Expression          Expression
+  | NumGT           Expression          Expression
+  | NumGEq          Expression          Expression
+  | Not             Expression          Expression
+  | And             Expression          Expression
+  | Or              Expression          Expression
+deriving instance Eq ConditionalExpression
+deriving instance Ord ConditionalExpression
+deriving instance Show ConditionalExpression
 
 {-| The names of special variables, with otherwise illegal identifiers, are
     represented by this type.
