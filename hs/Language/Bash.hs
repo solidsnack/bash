@@ -15,6 +15,8 @@ module Language.Bash
   , Language.Bash.Syntax.identifier
   , Language.Bash.Syntax.SpecialVar()
   , Language.Bash.Syntax.specialVar
+  , Language.Bash.Syntax.VarName(..)
+  , Language.Bash.Syntax.varName
   , Language.Bash.Syntax.Redirection(..)
   , Language.Bash.Syntax.FileDescriptor(..)
   , Language.Bash.PrettyPrinter.PP(..)
