@@ -12,7 +12,9 @@
 module Language.Bash.Syntax where
 
 import Prelude hiding (all)
+import Control.Applicative
 import Control.Arrow ((***))
+import Control.Monad
 import Data.Char
 import Data.String
 import Data.Maybe
@@ -145,15 +147,16 @@ data Expression t            =  Literal Esc.Bash
                              |  Asterisk
                              |  QuestionMark
                              |  Tilde
-                             |  ReadVar (Either SpecialVar Identifier)
-                             |  ReadVarSafe (Either SpecialVar Identifier)
+                             |  ReadVar VarName
+                             |  ReadVarSafe VarName
                              |  ReadArray Identifier (Expression t)
                              |  ReadArraySafe Identifier (Expression t)
                              |  ARGVElements
                              |  ARGVLength
                              |  Elements Identifier
                              |  Keys Identifier
-                             |  Length (Either SpecialVar Identifier)
+                             |  Length VarName
+                             |  Trim Trim VarName (Expression t)
                              |  ArrayLength Identifier
                              |  Concat (Expression t) (Expression t)
                              |  Eval (Annotated t)
@@ -182,6 +185,7 @@ instance Functor Expression where
     Elements ident          ->  Elements ident
     Keys ident              ->  Keys ident
     Length ident            ->  Length ident
+    Trim trim v expr        ->  Trim trim v (fmap f expr)
     ArrayLength ident       ->  ArrayLength ident
     Concat expr expr'       ->  Concat (fmap f expr) (fmap f expr')
     Eval ann                ->  Eval (fmap f ann)
@@ -203,6 +207,7 @@ instance Foldable Expression where
     Elements _              ->  mempty
     Keys _                  ->  mempty
     Length _                ->  mempty
+    Trim _ _ expr           ->  foldMap f expr
     ArrayLength _           ->  mempty
     Concat expr expr'       ->  foldMap f expr `mappend` foldMap f expr'
     Eval ann                ->  foldMap f ann
@@ -214,6 +219,17 @@ instance Foldable Expression where
  -}
 literal                     ::  ByteString -> Expression t
 literal                      =  Literal . Esc.bash
+
+data VarName                 =  VarIdent Identifier | VarSpecial SpecialVar
+deriving instance Eq VarName
+deriving instance Ord VarName
+deriving instance Show VarName
+instance IsString VarName where
+  fromString                 =  fromJust . varName . fromString
+
+varName                     ::  ByteString -> Maybe VarName
+varName bytes                =  (VarSpecial <$> specialVar bytes) `mplus`
+                                (VarIdent <$> identifier bytes)
 
 {-| The type of legal Bash identifiers, strings beginning with letters or @_@
     and containing letters, @_@ and digits.
@@ -236,6 +252,64 @@ identifier bytes             =  do
  where
   okayTail c                 =  (isAlphaNum c || c == '_') && isAscii c
   okayHead c                 =  (isAlpha c || c == '_') && isAscii c
+
+{-| The names of special variables, with otherwise illegal identifiers, are
+    represented by this type.
+ -}
+data SpecialVar
+  = DollarQuestion | DollarHyphen      | DollarDollar
+                   | DollarBang        | DollarUnderscore
+                   | Dollar0 | Dollar1 | Dollar2 | Dollar3 | Dollar4
+                   | Dollar5 | Dollar6 | Dollar7 | Dollar8 | Dollar9
+deriving instance Eq SpecialVar
+deriving instance Ord SpecialVar
+deriving instance Show SpecialVar
+instance IsString SpecialVar where
+  fromString                 =  fromJust . specialVar . fromString
+
+{-| Try to render a 'SpecialVar' from a 'ByteString'.
+ -}
+specialVar                  ::  ByteString -> Maybe SpecialVar
+specialVar b | "$?" == b     =  Just DollarQuestion
+             | "$-" == b     =  Just DollarHyphen
+             | "$$" == b     =  Just DollarDollar
+             | "$!" == b     =  Just DollarBang
+             | "$_" == b     =  Just DollarUnderscore
+             | "$0" == b     =  Just Dollar0
+             | "$1" == b     =  Just Dollar1
+             | "$2" == b     =  Just Dollar2
+             | "$3" == b     =  Just Dollar3
+             | "$4" == b     =  Just Dollar4
+             | "$5" == b     =  Just Dollar5
+             | "$6" == b     =  Just Dollar6
+             | "$7" == b     =  Just Dollar7
+             | "$8" == b     =  Just Dollar8
+             | "$9" == b     =  Just Dollar9
+             | otherwise     =  Nothing
+
+specialVarBytes             ::  SpecialVar -> ByteString
+specialVarBytes DollarQuestion = "$?"
+specialVarBytes DollarHyphen =  "$-"
+specialVarBytes DollarDollar =  "$$"
+specialVarBytes DollarBang   =  "$!"
+specialVarBytes DollarUnderscore = "$_"
+specialVarBytes Dollar0      =  "$0"
+specialVarBytes Dollar1      =  "$1"
+specialVarBytes Dollar2      =  "$2"
+specialVarBytes Dollar3      =  "$3"
+specialVarBytes Dollar4      =  "$4"
+specialVarBytes Dollar5      =  "$5"
+specialVarBytes Dollar6      =  "$6"
+specialVarBytes Dollar7      =  "$7"
+specialVarBytes Dollar8      =  "$8"
+specialVarBytes Dollar9      =  "$9"
+
+
+data Trim                    =  ShortestLeading  | LongestLeading
+                             |  ShortestTrailing | LongestTrailing
+deriving instance Eq Trim
+deriving instance Ord Trim
+deriving instance Show Trim
 
 {-| A file descriptor in Bash is simply a number between 0 and 255.
  -}
@@ -302,44 +376,4 @@ deriving instance (Eq t) => Eq (ConditionalExpression t)
 deriving instance (Ord t) => Ord (ConditionalExpression t)
 deriving instance (Show t) => Show (ConditionalExpression t)
 
-{-| The names of special variables, with otherwise illegal identifiers, are
-    represented by this type.
- -}
-data SpecialVar
-  = DollarQuestion | Dollar0 | Dollar1 | Dollar2 | Dollar3 | Dollar4
-                   | Dollar5 | Dollar6 | Dollar7 | Dollar8 | Dollar9
-deriving instance Eq SpecialVar
-deriving instance Ord SpecialVar
-deriving instance Show SpecialVar
-instance IsString SpecialVar where
-  fromString                 =  fromJust . specialVar . fromString
-
-{-| Try to render a 'SpecialVar' from a 'ByteString'.
- -}
-specialVar                  ::  ByteString -> Maybe SpecialVar
-specialVar b | "$?" == b     =  Just DollarQuestion
-             | "$0" == b     =  Just Dollar0
-             | "$1" == b     =  Just Dollar1
-             | "$2" == b     =  Just Dollar2
-             | "$3" == b     =  Just Dollar3
-             | "$4" == b     =  Just Dollar4
-             | "$5" == b     =  Just Dollar5
-             | "$6" == b     =  Just Dollar6
-             | "$7" == b     =  Just Dollar7
-             | "$8" == b     =  Just Dollar8
-             | "$9" == b     =  Just Dollar9
-             | otherwise     =  Nothing
-
-specialVarBytes             ::  SpecialVar -> ByteString
-specialVarBytes DollarQuestion = "$?"
-specialVarBytes Dollar0      =  "$0"
-specialVarBytes Dollar1      =  "$1"
-specialVarBytes Dollar2      =  "$2"
-specialVarBytes Dollar3      =  "$3"
-specialVarBytes Dollar4      =  "$4"
-specialVarBytes Dollar5      =  "$5"
-specialVarBytes Dollar6      =  "$6"
-specialVarBytes Dollar7      =  "$7"
-specialVarBytes Dollar8      =  "$8"
-specialVarBytes Dollar9      =  "$9"
 

@@ -56,7 +56,8 @@ exit 0
 
 #> let ls = Annotated () . SimpleCommand "ls" . (:[])
 #> let echo = Annotated () . SimpleCommand "echo"
-#> let randomLT_ n = SimpleCommand "[" [ReadVar (Right "RANDOM"), "-lt", n, "]"]
+#> let vRANDOM = VarIdent "RANDOM"
+#> let randomLT_ n = SimpleCommand "[" [ReadVar vRANDOM), "-lt", n, "]"]
 #> let randomLT n = Annotated () (randomLT_ n)
 #> let commented a b = Annotated (Lines a b)
 
@@ -82,7 +83,7 @@ done 1>>$'fo&o'
   echo dudes. ;} 1>msg
 
 #> let (varX :: Identifier) = "x"
-#> let readX = ReadVarSafe (Right varX)
+#> let readX = ReadVarSafe (VarIdent varX)
 #> let lsX = Annotated () (SimpleCommand "ls" [readX])
 #> let lsMsg = Annotated () (SimpleCommand "echo" ["Failed to `ls':", readX])
 #> let lsErr = Annotated () (Redirect lsMsg Out 1 (Right 2))
@@ -144,7 +145,7 @@ done
 #> let clause1 = clause "second"
 #> let clause_ = (Asterisk, echoRem ["?"])
 #> let clauses = [clause0, clause1, clause_]
-#> let caseStmt = noRem $ Case (ReadVarSafe (Left Dollar1)) clauses
+#> let caseStmt = noRem $ Case (ReadVarSafe (VarSpecial Dollar1)) clauses
 #> render caseStmt
 case "${1:-}" in
   first)  # Remark.
@@ -245,8 +246,8 @@ echo "$( #+echo
 #-echo
 
 #> let (varX :: Identifier) = "x"
-#> let readX = ReadVar (Right varX)
-#> let lengthX = Length (Right varX)
+#> let readX = ReadVar (VarIdent varX)
+#> let lengthX = Length (VarIdent varX)
 #> let echoX = Annotated () (SimpleCommand "echo" [readX, "----", lengthX])
 #> let seq4 = Annotated () (SimpleCommand "seq" ["1","4"])
 #> let forSeq = For varX [Eval seq4, EvalUnquoted seq4] echoX
@@ -259,4 +260,32 @@ done
 #> let lsRoot = ls (Concat Tilde "root")
 #> render lsRoot
 ls ~root
+
+#> let (patterns :: Identifier) = "patterns"
+#> let (string :: Identifier) = "string"
+#> let identSTRING = VarIdent string
+#> let readSTRING = ReadVar identSTRING
+#> let readPATTERN0 = ReadArray patterns (literal "leading")
+#> let readPATTERN1 = ReadArray patterns (literal "trailing")
+#> let setSTRING = Annotated () (VarAssign string "ab/cd/ef")
+#> let setPATTERNS = Annotated () (DictDecl patterns [("leading", "ab")])
+#> let setPATTERN1 = Annotated () (DictUpdate patterns "trailing" "ef")
+#> let trimLFixed = Trim ShortestLeading identSTRING readPATTERN0
+#> let trimTFixed = Trim ShortestTrailing identSTRING readPATTERN1
+#> let glob0 :: Expression () = Concat Asterisk "/"
+#> let glob1 :: Expression () = Concat "/" Asterisk
+#> let trimSL = Trim ShortestLeading identSTRING glob0
+#> let trimLL = Trim LongestLeading identSTRING glob0
+#> let trimST = Trim ShortestTrailing identSTRING glob1
+#> let trimLT = Trim LongestTrailing identSTRING glob1
+#> let trims = [trimLFixed, trimTFixed, trimSL, trimLL, trimST, trimLT]
+#> let sequence a b = Annotated () (Sequence a b)
+#> let set_ = setSTRING `sequence` setPATTERNS `sequence` setPATTERN1
+#> let echoSubs = Annotated () (SimpleCommand "echo" trims)
+#> render (set_ `sequence` echoSubs)
+string=ab/cd/ef
+declare -A patterns=( [leading]=ab )
+patterns[trailing]=ef
+echo "${string#"${patterns[leading]}"}" "${string%"${patterns[trailing]}"}" \
+     "${string#*/}" "${string##*/}" "${string%/*}" "${string%%/*}"
 

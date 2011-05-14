@@ -11,9 +11,9 @@
 module Language.Bash.PrettyPrinter where
 
 import qualified Data.List as List
-import Data.Word (Word8)
 import Data.ByteString.Char8
 import Data.Binary.Builder (Builder)
+import Data.Monoid
 import Prelude hiding (concat, length, replicate, lines, drop, null)
 import Control.Monad.State.Strict
 
@@ -50,11 +50,13 @@ instance (Annotation t) => PP (Expression t) where
   pp Asterisk                =  word "*"
   pp QuestionMark            =  word "?"
   pp Tilde                   =  word "~"
-  pp (ReadVar var)           =  (word . quote . ('$' `cons`) . identpart) var
+  pp (ReadVar var) = (word . quote) (if s == "$!" then "${!}" else s)
+   where -- Need to be careful to avoid history expansion of @"@.
+    s                        =  (('$' `cons`) . identpart) var
   pp (ReadVarSafe var)       =  (word . quote . braces0 . identpart) var
-  pp (ReadArray ident expr)  =  (word . braces)
+  pp (ReadArray ident expr)  =  (word . quote . braces)
                                 (bytes ident `append` brackets (bytes expr))
-  pp (ReadArraySafe ident expr) = (word . braces0)
+  pp (ReadArraySafe ident expr) = (word . quote . braces0)
                                   (bytes ident `append` brackets (bytes expr))
   -- Examples that all work for nasty arguments containing brackets:
   --   echo "${array[$1]}"
@@ -69,6 +71,8 @@ instance (Annotation t) => PP (Expression t) where
                                 ('!' `cons` bytes ident `append` "[@]")
   pp (Length ident)          =  (word . quote . braces)
                                 ('#' `cons` identpart ident)
+  pp (Trim trim var expr)    =  (word . quote . braces . mconcat)
+                                [identpart var, trimPrinter trim, bytes expr]
   pp (ArrayLength ident)     =  (word . quote . braces)
                                 ('#' `cons` bytes ident `append` "[@]")
   pp (Concat expr0 expr1)    =  wordcat [bytes expr0, bytes expr1]
@@ -114,7 +118,7 @@ instance (Annotation t) => PP (Statement t) where
     Until t t'              ->  do hang "until" >> pp t >> outdent >> nl
                                    inword "do" >> pp t' >> outword "done"
 --  BraceBrace _            ->  error "[[ ]]"
-    VarAssign var val       ->  pp var >> word "=" >> pp val
+    VarAssign var val       ->  wordcat [bytes var, "=", bytes val]
     ArrayDecl var exprs     ->  do hangcat ["declare -a ", bytes var, "=("]
                                    array_pp pp exprs >> word ")"
                                    nl >> outdent
@@ -125,8 +129,8 @@ instance (Annotation t) => PP (Statement t) where
     DictDecl var pairs      ->  do hangcat ["declare -A ", bytes var, "=("]
                                    array_pp keyset pairs >> word ")"
                                    nl >> outdent
-    DictUpdate var key val  ->  do hangcat [bytes var, "[", bytes key, "]="]
-                                   pp val >> outdent
+    DictUpdate var key val  ->  wordcat
+                                [bytes var, "[", bytes key, "]=", bytes val]
     DictAssign var pairs    ->  do hangcat [bytes var, "=("]
                                    array_pp keyset pairs
                                    nl >> outdent >> word ")"
@@ -140,7 +144,7 @@ array_pp ppF (h:t)           =  ppF h >> mapM_ ppFNL t
  where
   ppFNL x                    =  nl >> ppF x
 
-keyset (key, val) = word "[" >> pp key >> word "]=" >> pp val
+keyset (key, val)            =  wordcat ["[", bytes key, "]=", bytes val]
 
 case_clause (ptrn, stmt)     =  do hang (bytes ptrn `append` ") ")
                                    pp stmt >> word ";;" >> outdent >> nl
@@ -160,8 +164,14 @@ braces0 b                    =  "${" `append` b `append` ":-}"
 
 brackets b                   =  '[' `cons` b `snoc` ']'
 
-identpart (Left special)     =  (drop 1 . bytes) special
-identpart (Right ident)      =  bytes ident
+identpart (VarSpecial special) = (drop 1 . bytes) special
+identpart (VarIdent ident)   =  bytes ident
+
+trimPrinter                 ::  Trim -> ByteString
+trimPrinter ShortestLeading  =  "#"
+trimPrinter LongestLeading   =  "##"
+trimPrinter ShortestTrailing = "%"
+trimPrinter LongestTrailing  =  "%%"
 
 binGrp a@(Annotated _ stmt)  =  case stmt of
   Bang _                    ->  curlyOpen >> pp a >> curlyClose
@@ -203,5 +213,4 @@ inlineEvalPrinter open close ann =  do
   pp ann
   word close
   outdent >> outdent
-
 

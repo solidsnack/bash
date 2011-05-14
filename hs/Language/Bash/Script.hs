@@ -81,7 +81,7 @@ mtokenCheck token f statement = IfThen (Annotated (f check) check)
 
 tokenFGREPq                 ::  ByteString -> Statement t
 tokenFGREPq token
-  = SimpleCommand "fgrep" ["-q", literal token, ReadVar (Left Dollar0)]
+  = SimpleCommand "fgrep" ["-q", literal token, ReadVar (VarSpecial Dollar0)]
 
 {-| Scan @$0@ the SHA1 of the statement before running.
  -}
