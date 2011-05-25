@@ -57,7 +57,7 @@ exit 0
 #> let ls = Annotated () . SimpleCommand "ls" . (:[])
 #> let echo = Annotated () . SimpleCommand "echo"
 #> let vRANDOM = VarIdent "RANDOM"
-#> let randomLT_ n = SimpleCommand "[" [ReadVar vRANDOM), "-lt", n, "]"]
+#> let randomLT_ n = SimpleCommand "[" [ReadVar vRANDOM, "-lt", n, "]"]
 #> let randomLT n = Annotated () (randomLT_ n)
 #> let commented a b = Annotated (Lines a b)
 
