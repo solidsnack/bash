@@ -190,7 +190,7 @@ breakline                   ::  (PP t) => t -> State PPState ()
 breakline printable          =  do
   PPState{..}               <-  get
   when (columns + maxLineLength printed + 1 > 79 && columns /= sum indents)
-       (opM [Word "\\", Newline])
+       (opM [Bytes "\\", Newline])
   pp printable
  where
   printed                    =  bytes printable

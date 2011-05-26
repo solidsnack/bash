@@ -300,10 +300,10 @@ echo "${string#"${patterns[leading]}"}" "${string%"${patterns[trailing]}"}" \
 ##> let c2  = clauseSimple "x" (echo__ "->x")
 #> let c2  = clauseSimple "x" ((Bang . Annotated()) (echo__ "->x"))
 ##> let c2  = clauseSimple "x" ((redirectI "i") (echo__ "->x"))
-##> let cIO = clauseSimple "y" ((redirectO "o" . redirectI "i") (echo_ ["->y"]))
+#> let cIO = clauseSimple "y" ((redirectO "o" . redirectI "i") (echo_ ["->y"]))
 #> let cI_ = clauseSimple "z" (redirectI "i" (echo_ ["->z"]))
 #> let read_1 = ReadVarSafe (VarSpecial Dollar1)
-#> let caseClauseRedirect = Annotated () (Case read_1 [c__, c2, cI_])
+#> let caseClauseRedirect = Annotated () (Case read_1 [c__, c2, cI_, cIO])
 #> render caseClauseRedirect
 case "${1:-}" in
   w)  echo $'->w' ;;
