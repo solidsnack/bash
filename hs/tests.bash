@@ -289,3 +289,37 @@ patterns[trailing]=ef
 echo "${string#"${patterns[leading]}"}" "${string%"${patterns[trailing]}"}" \
      "${string#*/}" "${string##*/}" "${string%/*}" "${string%%/*}"
 
+#redirectIn  y c = Redirect (ann_ c) In  0 (Left y)
+#> let redirectI f stmt = Redirect (Annotated () stmt) In  0 (Left f)
+#> let redirectO f stmt = Redirect (Annotated () stmt) Out 1 (Left f)
+#> let redirectE f stmt = Redirect (Annotated () stmt) Out 2 (Left f)
+#> let clauseSimple ex stmt = (ex, Annotated () stmt)
+#> let echo_ = SimpleCommand "echo"
+#> let echo__ t = Sequence (Annotated () (echo_ [t])) (Annotated () (echo_ [t]))
+#> let c__ = clauseSimple "w" (echo_ ["->w"])
+##> let c2  = clauseSimple "x" (echo__ "->x")
+#> let c2  = clauseSimple "x" ((Bang . Annotated()) (echo__ "->x"))
+##> let c2  = clauseSimple "x" ((redirectI "i") (echo__ "->x"))
+##> let cIO = clauseSimple "y" ((redirectO "o" . redirectI "i") (echo_ ["->y"]))
+#> let cI_ = clauseSimple "z" (redirectI "i" (echo_ ["->z"]))
+#> let read_1 = ReadVarSafe (VarSpecial Dollar1)
+#> let caseClauseRedirect = Annotated () (Case read_1 [c__, c2, cI_])
+#> render caseClauseRedirect
+case "${1:-}" in
+  w)  echo $'->w' ;;
+  x)  ! { echo $'->x'
+          echo $'->x' ;} ;;
+  z)  echo $'->z' 0<i ;;
+esac
+
+#> let echo2 = Annotated () ((Bang . Annotated()) (echo__ "->x"))
+#> let echoFor = Annotated () $ echo2 `AndAnd` forStmt
+#> render echoFor
+{ ! { echo $'->x'
+      echo $'->x' ;} ;} &&
+for x in /var/log/apache2/*.log /var/log/httpd
+do
+  ls "${x:-}" ||
+  echo $'Failed to `ls\':' "${x:-}" 1>&2
+done
+

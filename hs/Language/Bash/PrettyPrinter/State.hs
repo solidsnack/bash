@@ -83,9 +83,9 @@ op state@PPState{..} x       =  case x of
  where
   tSafe list                 =  if null list then [] else List.tail list
   sNL                        =  string `mappend` Builder.fromByteString "\n"
-  curly_s                    =  Builder.fromByteString "{" `mappend` string
+  curly_s                    =  string `mappend` Builder.fromByteString "{ "
   s_curly                    =  string `mappend` Builder.fromByteString " ;}"
-  round_s                    =  Builder.fromByteString "(" `mappend` string
+  round_s                    =  string `mappend` Builder.fromByteString "( "
   s_round                    =  string `mappend` Builder.fromByteString " )"
 
 opM                         ::  [PPOp] -> State PPState ()
