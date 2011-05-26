@@ -50,7 +50,7 @@ nlCol w                      =  PPState [w] [()] [()] 0 Builder.empty
 {-| Operations we can perform while pretty printing.
  -}
 data PPOp                    =  Indent Word -- ^ Indent by N spaces.
-                             |  Outdent -- ^ Remove and indentation level.
+                             |  Outdent -- ^ Remove an indentation level.
                              |  Word ByteString -- ^ Add a word to a line.
                              |  Newline -- ^ Move to newline.
                              |  Curly Bool -- ^ Introduce a level of braces.
