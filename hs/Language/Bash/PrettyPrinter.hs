@@ -89,7 +89,7 @@ instance (Annotation t) => PP (Statement t) where
                                    outdent
     NoOp msg | null msg     ->  word ":"
              | otherwise    ->  word ":" >> (word . Esc.bytes . Esc.bash) msg
-    Bang t                  ->  hang "!"      >> binGrp t >> outdent
+    Bang t                  ->  hang "!" >> binGrp t >> outdent
     AndAnd t t'             ->  binGrp t >> word "&&" >> nl >> binGrp t'
     OrOr t t'               ->  binGrp t >> word "||" >> nl >> binGrp t'
     Pipe t t'               ->  binGrp t >> word "|"  >> nl >> binGrp t'
@@ -170,7 +170,7 @@ identpart (VarIdent ident)   =  bytes ident
 trimPrinter                 ::  Trim -> ByteString
 trimPrinter ShortestLeading  =  "#"
 trimPrinter LongestLeading   =  "##"
-trimPrinter ShortestTrailing = "%"
+trimPrinter ShortestTrailing =  "%"
 trimPrinter LongestTrailing  =  "%%"
 
 binGrp a@(Annotated _ stmt)  =  case stmt of
