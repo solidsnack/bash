@@ -324,11 +324,8 @@ do
 done
 
 #> let (var :: Identifier) = "var"
-#> let evalEcho = (Eval . Annotated ()) (echo__ "text")
-#> let setEVAL = Annotated () (VarAssign var evalEcho)
+#> let setEVAL = Annotated () (VarAssign var (Eval whileStmt))
 #> render setEVAL
-var="$( echo text
-        echo text )"
 
 #> let (var :: Identifier) = "var"
 #> let evalUnquotedEcho = (EvalUnquoted . Annotated ()) (echo__ "text")

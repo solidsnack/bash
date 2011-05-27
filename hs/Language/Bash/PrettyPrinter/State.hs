@@ -79,6 +79,8 @@ op state@PPState{..} x       =  case x of
                                       , round = tSafe round, string = s_round
                                       , separated = False }
   WordSeparator             ->  state { separated = False }
+--WordSeparator | separated ->  state { indents = 1:indents, separated = False }
+--              | otherwise ->  state { separated = False }
   Newline | columns == 0    ->  state { separated = True }
           | otherwise       ->  state { string = sNL, columns = 0
                                       , separated = True          }
@@ -86,8 +88,9 @@ op state@PPState{..} x       =  case x of
    where
     c'                       =  columns + cast (length padded + length sSep)
     s'                       =  sappend padded
-    dent                     =  cast (sum indents)
-    padded | columns == 0    =  replicate dent ' ' `mappend` b
+    dent                     =  cast (sum indents) `replicate` ' '
+ -- dent                     =  renderIndents indents
+    padded | columns == 0    =  dent `mappend` b
            | otherwise       =  b
  where
   sappend = mappend string . Builder.fromByteString . mappend sSep
@@ -106,9 +109,9 @@ opM                          =  mapM_ (modify . flip op)
 nl                          ::  State PPState ()
 nl                           =  opM [Newline]
 hang                        ::  ByteString -> State PPState ()
-hang b                       =  opM [Bytes b, Indent (cast (length b) + 1)]
+hang b                       =  opM [Bytes b, Indent (cast (length b))]
 hangWord                    ::  ByteString -> State PPState ()
-hangWord b                   =  hang b >> opM [WordSeparator]
+hangWord b = opM [Bytes b, Indent (cast (length b) + 1), WordSeparator]
 word                        ::  ByteString -> State PPState ()
 word b                       =  opM [Bytes b, WordSeparator]
 wordcat                     ::  [ByteString] -> State PPState ()
@@ -127,14 +130,28 @@ roundOpen                   ::  State PPState ()
 roundOpen                    =  opM [Round True, WordSeparator]
 roundClose                  ::  State PPState ()
 roundClose                   =  opM [Round False, WordSeparator]
+
+{-| This procedure is used in printing statements within evals. It inserts an
+    indent to push the eval out to
+    effect of ...
+ -}
 indentPadToNextWord         ::  State PPState ()
 indentPadToNextWord          =  do
   PPState{..}               <-  get
-  let x                      =  sum indents
+  let i                      =  sum indents
       columns'               =  columns + 1
-      indent | columns' > x  =  columns' - x
+      indent | columns' > i  =  columns' - i
              | otherwise     =  0
   opM [Indent indent]
 
 cast                         =  fromIntegral
+
+-- Debug renderer.
+renderIndents indents        =  (mconcat . Prelude.reverse)
+                                (Prelude.map prettify_indent indents)
+ where
+  prettify_indent 0          =  ""
+  prettify_indent 1          =  "|"
+  prettify_indent 2          =  "-|"
+  prettify_indent n          =  "-" `mappend` prettify_indent (n-1)
 
