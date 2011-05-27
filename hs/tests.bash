@@ -323,3 +323,14 @@ do
   echo $'Failed to `ls\':' "${x:-}" 1>&2
 done
 
+#> let (var :: Identifier) = "var"
+#> let evalEcho = (Eval . Annotated ()) (echo__ "text")
+#> let setEVAL = Annotated () (VarAssign var evalEcho)
+#> render setEVAL
+var="$( echo text
+        echo text )"
+
+#> let (var :: Identifier) = "var"
+#> let evalUnquotedEcho = (EvalUnquoted . Annotated ()) (echo__ "text")
+#> let setEVALUNQUOTED = Annotated () (VarAssign var evalUnquotedEcho)
+#> render setEVALUNQUOTED

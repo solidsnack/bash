@@ -89,7 +89,7 @@ instance (Annotation t) => PP (Statement t) where
                                    outdent
     NoOp msg | null msg     ->  word ":"
              | otherwise    ->  word ":" >> (word . Esc.bytes . Esc.bash) msg
-    Bang t                  ->  hang "!" >> binGrp t >> outdent
+    Bang t                  ->  hangWord "!" >> binGrp t >> outdent
     AndAnd t t'             ->  binGrp t >> word "&&" >> nl >> binGrp t'
     OrOr t t'               ->  binGrp t >> word "||" >> nl >> binGrp t'
     Pipe t t'               ->  binGrp t >> word "|"  >> nl >> binGrp t'
@@ -99,26 +99,28 @@ instance (Annotation t) => PP (Statement t) where
     Subshell t              ->  roundOpen >> pp t     >> roundClose >> outdent
     Function ident t        ->  do wordcat ["function ", bytes ident]
                                    inword " {" >> pp t >> outword "}"
-    IfThen t t'             ->  do hang "if" >> pp t   >> outdent   >> nl
+    IfThen t t'             ->  do hangWord "if" >> pp t  >> outdent >> nl
                                    inword "then" >> pp t' >> outword "fi"
-    IfThenElse t t' t''     ->  do hang "if" >> pp t   >> outdent   >> nl
+    IfThenElse t t' t''     ->  do hangWord "if" >> pp t >> outdent >> nl
                                    inword "then"       >> pp t'     >> outdent
                                    nl
                                    inword "else"       >> pp t''
                                    outword "fi"
-    For var vals t          ->  do hang (concat ["for ", bytes var, " in"])
+    For var vals t          ->  do hangWord (concat ["for ", bytes var, " in"])
                                    mapM_ breakline vals
                                    outdent >> nl
                                    inword "do" >> pp t >> outword "done"
     Case expr cases         ->  do word "case" >> pp expr >> inword "in"
                                    mapM_ case_clause cases
                                    outword "esac"
-    While t t'              ->  do hang "while" >> pp t >> outdent >> nl
+    While t t'              ->  do hangWord "while" >> pp t >> outdent >> nl
                                    inword "do" >> pp t' >> outword "done"
-    Until t t'              ->  do hang "until" >> pp t >> outdent >> nl
+    Until t t'              ->  do hangWord "until" >> pp t >> outdent >> nl
                                    inword "do" >> pp t' >> outword "done"
 --  BraceBrace _            ->  error "[[ ]]"
-    VarAssign var val       ->  wordcat [bytes var, "=", bytes val]
+--  VarAssign var val       ->  wordcat [bytes var, "=", bytes val]
+    VarAssign var val       ->  do hang (bytes var `mappend` "=")
+                                   pp val >> outdent
     ArrayDecl var exprs     ->  do hangcat ["declare -a ", bytes var, "=("]
                                    array_pp pp exprs >> word ")"
                                    nl >> outdent
@@ -137,7 +139,7 @@ instance (Annotation t) => PP (Statement t) where
     Redirect stmt d fd t    ->  do redirectGrp stmt
                                    word (render_redirect d fd t)
 
-hangcat                      =  hang . concat
+hangcat                      =  hangWord . concat
 
 array_pp _   [   ]           =  return ()
 array_pp ppF (h:t)           =  ppF h >> mapM_ ppFNL t
@@ -146,7 +148,7 @@ array_pp ppF (h:t)           =  ppF h >> mapM_ ppFNL t
 
 keyset (key, val)            =  wordcat ["[", bytes key, "]=", bytes val]
 
-case_clause (ptrn, stmt)     =  do hang (bytes ptrn `append` ") ")
+case_clause (ptrn, stmt)     =  do hangWord (bytes ptrn `append` ") ")
                                    pp stmt >> word ";;" >> outdent >> nl
 
 render_redirect direction fd target =
@@ -209,7 +211,7 @@ finalLineLength b            =  case lines b of
 
 inlineEvalPrinter open close ann =  do
   indentPadToNextWord
-  hang open
+  hangWord open
   pp ann
   word close
   outdent >> outdent

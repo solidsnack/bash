@@ -78,28 +78,27 @@ op state@PPState{..} x       =  case x of
           | otherwise       ->  state { indents = tSafe indents
                                       , round = tSafe round, string = s_round
                                       , separated = False }
-  WordSeparator | separated ->  state
-                | otherwise ->  state { separated = False }
+  WordSeparator             ->  state { separated = False }
   Newline | columns == 0    ->  state { separated = True }
           | otherwise       ->  state { string = sNL, columns = 0
                                       , separated = True          }
-  Bytes b                   ->  state { string = s', columns = c'
-                                      , separated = False }
+  Bytes b                   ->  state { string = s', columns = c' }
    where
-    c'                       =  columns + cast (length padded)
-    s'                       =  sSep `mappend` Builder.fromByteString padded
+    c'                       =  columns + cast (length padded + length sSep)
+    s'                       =  sappend padded
     dent                     =  cast (sum indents)
-    padded | columns == 0    =  replicate dent ' ' `append` b
+    padded | columns == 0    =  replicate dent ' ' `mappend` b
            | otherwise       =  b
  where
+  sappend = mappend string . Builder.fromByteString . mappend sSep
   tSafe list                 =  if null list then [] else List.tail list
-  sNL                        =  sSep `mappend` Builder.fromByteString "\n"
-  curly_s                    =  sSep `mappend` Builder.fromByteString "{ "
-  s_curly                    =  sSep `mappend` Builder.fromByteString ";}"
-  round_s                    =  sSep `mappend` Builder.fromByteString "( "
-  s_round                    =  sSep `mappend` Builder.fromByteString ")"
-  sSep | not separated       =  string `mappend` Builder.fromByteString " "
-       | otherwise           =  string
+  sNL                        =  sappend "\n"
+  curly_s                    =  sappend "{"
+  s_curly                    =  sappend ";}"
+  round_s                    =  sappend "("
+  s_round                    =  sappend ")"
+  sSep | not separated       =  " "
+       | otherwise           =  ""
 
 opM                         ::  [PPOp] -> State PPState ()
 opM                          =  mapM_ (modify . flip op)
@@ -107,8 +106,9 @@ opM                          =  mapM_ (modify . flip op)
 nl                          ::  State PPState ()
 nl                           =  opM [Newline]
 hang                        ::  ByteString -> State PPState ()
-hang b                       =  opM [ Bytes b, Indent (cast (length b) + 1)
-                                    , WordSeparator                         ]
+hang b                       =  opM [Bytes b, Indent (cast (length b) + 1)]
+hangWord                    ::  ByteString -> State PPState ()
+hangWord b                   =  hang b >> opM [WordSeparator]
 word                        ::  ByteString -> State PPState ()
 word b                       =  opM [Bytes b, WordSeparator]
 wordcat                     ::  [ByteString] -> State PPState ()
