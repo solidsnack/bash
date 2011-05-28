@@ -326,8 +326,20 @@ done
 #> let (var :: Identifier) = "var"
 #> let setEVAL = Annotated () (VarAssign var (Eval whileStmt))
 #> render setEVAL
+var="$( while if $'[' "$RANDOM" -lt 40000 $']' 
+              then
+                $'[' "$RANDOM" -lt 10000 $']' 
+              else
+                $'[' "$RANDOM" -lt 45000 $']' 
+              fi 
+        do
+          echo ok 
+        done )"
 
 #> let (var :: Identifier) = "var"
 #> let evalUnquotedEcho = (EvalUnquoted . Annotated ()) (echo__ "text")
 #> let setEVALUNQUOTED = Annotated () (VarAssign var evalUnquotedEcho)
 #> render setEVALUNQUOTED
+var=$( echo text
+       echo text )
+

@@ -79,8 +79,6 @@ op state@PPState{..} x       =  case x of
                                       , round = tSafe round, string = s_round
                                       , separated = False }
   WordSeparator             ->  state { separated = False }
---WordSeparator | separated ->  state { indents = 1:indents, separated = False }
---              | otherwise ->  state { separated = False }
   Newline | columns == 0    ->  state { separated = True }
           | otherwise       ->  state { string = sNL, columns = 0
                                       , separated = True          }
@@ -89,7 +87,6 @@ op state@PPState{..} x       =  case x of
     c'                       =  columns + cast (length padded + length sSep)
     s'                       =  sappend padded
     dent                     =  cast (sum indents) `replicate` ' '
- -- dent                     =  renderIndents indents
     padded | columns == 0    =  dent `mappend` b
            | otherwise       =  b
  where
@@ -139,7 +136,8 @@ indentPadToNextWord         ::  State PPState ()
 indentPadToNextWord          =  do
   PPState{..}               <-  get
   let i                      =  sum indents
-      columns'               =  columns + 1
+      columns' | separated   =  columns
+               | otherwise   =  columns + 1
       indent | columns' > i  =  columns' - i
              | otherwise     =  0
   opM [Indent indent]
