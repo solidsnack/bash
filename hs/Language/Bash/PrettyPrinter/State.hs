@@ -128,9 +128,11 @@ roundOpen                    =  opM [Round True, WordSeparator]
 roundClose                  ::  State PPState ()
 roundClose                   =  opM [Round False, WordSeparator]
 
-{-| This procedure is used in printing statements within evals. It inserts an
-    indent to push the eval out to
-    effect of ...
+{-| This procedure is used in printing statements within evals, to set up
+    indentation correctly for lines /following/ the first line. It ensures
+    that the second and following lines are printed aligned with the first
+    character of the first line of the statement, not the first character of
+    the @$(@, @>(@ or @<(@ enclosing the eval.
  -}
 indentPadToNextWord         ::  State PPState ()
 indentPadToNextWord          =  do
