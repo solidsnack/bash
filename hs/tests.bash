@@ -310,6 +310,7 @@ case "${1:-}" in
   x)  ! { echo $'->x'
           echo $'->x' ;} ;;
   z)  echo $'->z' 0<i ;;
+  y)  { echo $'->y' 0<i ;} 1>o ;;
 esac
 
 #> let echo2 = Annotated () ((Bang . Annotated()) (echo__ "->x"))
