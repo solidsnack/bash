@@ -289,7 +289,6 @@ patterns[trailing]=ef
 echo "${string#"${patterns[leading]}"}" "${string%"${patterns[trailing]}"}" \
      "${string#*/}" "${string##*/}" "${string%/*}" "${string%%/*}"
 
-#redirectIn  y c = Redirect (ann_ c) In  0 (Left y)
 #> let redirectI f stmt = Redirect (Annotated () stmt) In  0 (Left f)
 #> let redirectO f stmt = Redirect (Annotated () stmt) Out 1 (Left f)
 #> let redirectE f stmt = Redirect (Annotated () stmt) Out 2 (Left f)
@@ -297,9 +296,7 @@ echo "${string#"${patterns[leading]}"}" "${string%"${patterns[trailing]}"}" \
 #> let echo_ = SimpleCommand "echo"
 #> let echo__ t = Sequence (Annotated () (echo_ [t])) (Annotated () (echo_ [t]))
 #> let c__ = clauseSimple "w" (echo_ ["->w"])
-##> let c2  = clauseSimple "x" (echo__ "->x")
 #> let c2  = clauseSimple "x" ((Bang . Annotated()) (echo__ "->x"))
-##> let c2  = clauseSimple "x" ((redirectI "i") (echo__ "->x"))
 #> let cIO = clauseSimple "y" ((redirectO "o" . redirectI "i") (echo_ ["->y"]))
 #> let cI_ = clauseSimple "z" (redirectI "i" (echo_ ["->z"]))
 #> let read_1 = ReadVarSafe (VarSpecial Dollar1)
