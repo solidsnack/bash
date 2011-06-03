@@ -87,16 +87,16 @@ op state@PPState{..} x       =  case x of
    where
     c'                       =  columns + cast (length padded + length sSep)
     s'                       =  sappend padded
-    dent                     =  cast (sum indents) `replicate` ' '
-    padded | columns == 0    =  dent `mappend` b
-           | otherwise       =  b
+    padded                   =  mappend dent b
  where
+  dent | columns == 0        =  cast (sum indents) `replicate` ' '
+       | otherwise           =  ""
   sappend = mappend string . Builder.fromByteString . mappend sSep
   tSafe list                 =  if null list then [] else List.tail list
   sNL                        =  sappend "\n"
-  curly_s                    =  sappend "{"
+  curly_s                    =  sappend (mappend dent "{")
   s_curly                    =  sappend ";}"
-  round_s                    =  sappend "("
+  round_s                    =  sappend (mappend dent "(")
   s_round                    =  sappend ")"
   sSep | not separated       =  " "
        | otherwise           =  ""
