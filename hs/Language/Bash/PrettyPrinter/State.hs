@@ -82,7 +82,8 @@ op state@PPState{..} x       =  case x of
   Newline | columns == 0    ->  state { separated = True }
           | otherwise       ->  state { string = sNL, columns = 0
                                       , separated = True          }
-  Bytes b                   ->  state { string = s', columns = c' }
+  Bytes b                   ->  state { string = s', columns = c'
+                                      , separated = True          }
    where
     c'                       =  columns + cast (length padded + length sSep)
     s'                       =  sappend padded
