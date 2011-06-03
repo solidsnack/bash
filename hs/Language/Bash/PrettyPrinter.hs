@@ -209,7 +209,7 @@ finalLineLength b            =  case lines b of
   [ ]                       ->  0
   h:t                       ->  (fromIntegral . length . List.last) (h:t)
 
-inlineEvalPrinter open close ann =  do
+inlineEvalPrinter open close ann = do
   indentPadToNextWord
   hangWord open
   pp ann
