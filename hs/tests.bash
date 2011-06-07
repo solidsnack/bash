@@ -295,25 +295,25 @@ echo "${string#"${patterns[leading]}"}" "${string%"${patterns[trailing]}"}" \
 #> let clauseSimple ex stmt = (ex, Annotated () stmt)
 #> let echo_ = SimpleCommand "echo"
 #> let echo__ t = Sequence (Annotated () (echo_ [t])) (Annotated () (echo_ [t]))
+#> let echoIO = (redirectO "o" . redirectI "i") (echo_ ["->y"])
+#> let setFOO = VarAssign "foo" (Eval seq4)
 #> let c__ = clauseSimple "w" (echo_ ["->w"])
 #> let c2  = clauseSimple "x" ((Bang . Annotated()) (echo__ "->x"))
-#> let cIO = clauseSimple "y" ((redirectO "o" . redirectI "i") (echo_ ["->y"]))
+#> let cIO = clauseSimple "y" echoIO
 #> let cI_ = clauseSimple "z" (redirectI "i" (echo_ ["->z"]))
-#> let longEcho = (Annotated() . Bang . Annotated()) (echo__ "->a")
-#> let long = Sequence setPATTERNS longEcho
+#> let long = Sequence (Annotated() setFOO) (Annotated() echoIO)
 #> let cL = clauseSimple "a" long
 #> let read_1 = ReadVarSafe (VarSpecial Dollar1)
-#> let caseClauseRedirect = Annotated () (Case read_1 [c__, c2, cI_, cIO, cL])
+#> let caseClauseRedirect = Annotated () (Case read_1 [c__, c2, cIO, cI_, cL])
 #> render caseClauseRedirect
 case "${1:-}" in
   w)  echo $'->w' ;;
   x)  ! { echo $'->x'
           echo $'->x' ;} ;;
-  z)  echo $'->z' 0<i ;;
   y)  { echo $'->y' 0<i ;} 1>o ;;
-  a)  declare -A patterns=( [leading]=ab )
-      ! { echo $'->a'
-          echo $'->a' ;} ;;
+  z)  echo $'->z' 0<i ;;
+  a)  foo="$( seq 1 4 )"
+      { echo $'->y' 0<i ;} 1>o ;;
 esac
 
 #> let echo2 = Annotated () ((Bang . Annotated()) (echo__ "->x"))
