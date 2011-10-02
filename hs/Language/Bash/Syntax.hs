@@ -63,6 +63,7 @@ data Statement t
   | Until           (Annotated t)       (Annotated t)
 --  BraceBrace      (ConditionalExpression t)
   | VarAssign       Identifier          (Expression t)
+  | Export          Identifier          (Expression t)
   | ArrayDecl       Identifier          [Expression t]
   | ArrayUpdate     Identifier          (Expression t)      (Expression t)
   | ArrayAssign     Identifier          [Expression t]
@@ -95,6 +96,7 @@ instance Functor Statement where
     Until ann ann'          ->  Until (f' ann) (f' ann')
 --  BraceBrace      (ConditionalExpression t)
     VarAssign ident expr    ->  VarAssign ident (f' expr)
+    Export ident expr       ->  Export ident (f' expr)
     ArrayDecl ident assigns ->  ArrayDecl ident (fmap f' assigns)
     ArrayUpdate ident a b   ->  ArrayUpdate ident (f' a) (f' b)
     ArrayAssign ident assigns -> ArrayAssign ident (fmap f' assigns)
@@ -127,6 +129,7 @@ instance Foldable Statement where
     Until ann ann'          ->  f' ann `mappend` f' ann'
 --  BraceBrace      ConditionalExpression
     VarAssign _ expr        ->  f' expr
+    Export _ expr           ->  f' expr
     ArrayDecl _ assigns     ->  foldMap f' assigns
     ArrayUpdate _ a b       ->  f' a `mappend` f' b
     ArrayAssign _ assigns   ->  foldMap f' assigns

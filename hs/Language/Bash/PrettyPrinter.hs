@@ -118,8 +118,9 @@ instance (Annotation t) => PP (Statement t) where
     Until t t'              ->  do hangWord "until" >> pp t >> outdent >> nl
                                    inword "do" >> pp t' >> outword "done"
 --  BraceBrace _            ->  error "[[ ]]"
---  VarAssign var val       ->  wordcat [bytes var, "=", bytes val]
     VarAssign var val       ->  do hang (bytes var `mappend` "=")
+                                   pp val >> outdent
+    Export var val          ->  do hangcat ["export ", bytes var, "="]
                                    pp val >> outdent
     ArrayDecl var exprs     ->  do hangcat ["declare -a ", bytes var, "=("]
                                    array_pp pp exprs >> word ")"
