@@ -84,6 +84,7 @@ instance (Annotation t) => PP (Annotated t) where
   pp (Annotated t stmt)      =  annotate t stmt
 instance (Annotation t) => PP (Statement t) where
   pp term                    =  case term of
+    Empty                   ->  return ()
     SimpleCommand cmd args  ->  do hangMultiline cmd
                                    mapM_ breakline args
                                    outdent

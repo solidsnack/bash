@@ -44,7 +44,8 @@ instance Foldable Annotated where
     It is a 'Foldable' and a 'Functor'.
  -}
 data Statement t
-  = SimpleCommand   (Expression t)      [Expression t]
+  = Empty
+  | SimpleCommand   (Expression t)      [Expression t]
   | NoOp            ByteString
   | Bang            (Annotated t)
   | AndAnd          (Annotated t)       (Annotated t)
@@ -77,6 +78,7 @@ deriving instance (Ord t) => Ord (Statement t)
 deriving instance (Show t) => Show (Statement t)
 instance Functor Statement where
   fmap f stmt                =  case stmt of
+    Empty                   ->  Empty
     SimpleCommand cmd args  ->  SimpleCommand (f' cmd) (fmap f' args)
     NoOp b                  ->  NoOp b
     Bang ann                ->  Bang (f' ann)
@@ -110,6 +112,7 @@ instance Functor Statement where
     fmapExprFD (Right fd)    =  Right fd
 instance Foldable Statement where
   foldMap f stmt             =  case stmt of
+    Empty                   ->  mempty
     SimpleCommand cmd args  ->  f' cmd `mappend` foldMap f' args
     NoOp _                  ->  mempty
     Bang ann                ->  f' ann
