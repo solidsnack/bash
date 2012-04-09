@@ -39,14 +39,14 @@ esed ident d | not d         =  setGNUorBSD
     parameter to the second, using @seq@.
  -}
 for
- :: (Monoid m, Integral i)
+ :: (Monoid m, Integral i, Show i)
  => Identifier -> i -> i -> Annotated m -> Statement m
 for ident a z ann            =  For ident [EvalUnquoted (ann_ (seqAZ a z))] ann
 
 
 {-| Evaluate @seq@ for the given arguments.
  -}
-seqAZ                       ::  (Integral i) => i -> i -> Statement t
+seqAZ                       ::  (Integral i, Show i) => i -> i -> Statement t
 seqAZ a z                    =  SimpleCommand "seq" [lshow a, lshow z]
  where
   lshow                      =  literal . pack . show
