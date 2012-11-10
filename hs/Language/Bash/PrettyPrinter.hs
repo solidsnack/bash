@@ -99,7 +99,7 @@ instance (Annotation t) => PP (Statement t) where
     Group t                 ->  curlyOpen >> pp t     >> curlyClose >> outdent
     Subshell t              ->  roundOpen >> pp t     >> roundClose >> outdent
     Function ident t        ->  do wordcat ["function ", bytes ident]
-                                   inword " {" >> pp t >> outword "}"
+                                   inword "{" >> pp t >> outword "}"
     IfThen t t'             ->  do hangWord "if" >> pp t  >> outdent >> nl
                                    inword "then" >> pp t' >> outword "fi"
     IfThenElse t t' t''     ->  do hangWord "if" >> pp t >> outdent >> nl
