@@ -49,7 +49,7 @@ for ident a z ann            =  For ident [EvalUnquoted (ann_ (seqAZ a z))] ann
 seqAZ                       ::  (Integral i) => i -> i -> Statement t
 seqAZ a z                    =  SimpleCommand "seq" [lshow a, lshow z]
  where
-  lshow                      =  literal . pack . show
+  lshow                      =  literal . pack . show . toInteger
 
 
 {-| A set statement that covers a few error handling options, setting
