@@ -160,13 +160,13 @@ render_redirect direction fd target =
                    , case target of Left expr -> bytes expr
                                     Right fd' -> '&' `cons` bytes fd' ]
 
-quote b                      =  '"' `cons` b `snoc` '"'
+quote b                      =  cons '"' b `snoc` '"'
 
 braces b                     =  "${" `append` b `snoc` '}'
 
 braces0 b                    =  "${" `append` b `append` ":-}"
 
-brackets b                   =  '[' `cons` b `snoc` ']'
+brackets b                   =  cons '[' b `snoc` ']'
 
 identpart (VarSpecial special) = (drop 1 . bytes) special
 identpart (VarIdent ident)   =  bytes ident
