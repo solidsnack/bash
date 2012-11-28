@@ -91,10 +91,13 @@ instance (Annotation t) => PP (Statement t) where
     NoOp msg | null msg     ->  word ":"
              | otherwise    ->  word ":" >> (word . Esc.bytes . Esc.bash) msg
     Bang t                  ->  hangWord "!" >> binGrp t >> outdent
-    AndAnd t t'             ->  binGrp t >> word "&&" >> nl >> binGrp t'
-    OrOr t t'               ->  binGrp t >> word "||" >> nl >> binGrp t'
-    Pipe t t'               ->  binGrp t >> word "|"  >> nl >> binGrp t'
-    Sequence t t'           ->  pp t          >> nl        >> pp t'
+    AndAnd t t' | simple t  ->  pp t     >> word "&&" >> nl >> pp t'
+                | otherwise ->  binGrp t >> word "&&" >> nl >> binGrp t'
+    OrOr t t' | simple t    ->  pp t     >> word "||" >> nl >> pp t'
+              | otherwise   ->  binGrp t >> word "||" >> nl >> binGrp t'
+    Pipe t t' | simple t    ->  pp t     >> word "|"  >> nl >> pp t'
+              | otherwise   ->  binGrp t >> word "|"  >> nl >> binGrp t'
+    Sequence t t'           ->  pp t     >> nl        >> pp t'
     Background t t'         ->  binGrp t >> word "&"  >> nl >> pp t'
     Group t                 ->  curlyOpen >> pp t     >> curlyClose >> outdent
     Subshell t              ->  roundOpen >> pp t     >> roundClose >> outdent
@@ -176,6 +179,10 @@ trimPrinter ShortestLeading  =  "#"
 trimPrinter LongestLeading   =  "##"
 trimPrinter ShortestTrailing =  "%"
 trimPrinter LongestTrailing  =  "%%"
+
+simple a@(Annotated _ stmt)  =  case stmt of
+  SimpleCommand _ _         ->  True
+  _                         ->  False
 
 binGrp a@(Annotated _ stmt)  =  case stmt of
   Bang _                    ->  curlyOpen >> pp a >> curlyClose
