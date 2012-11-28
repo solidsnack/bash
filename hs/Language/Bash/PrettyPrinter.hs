@@ -91,12 +91,15 @@ instance (Annotation t) => PP (Statement t) where
     NoOp msg | null msg     ->  word ":"
              | otherwise    ->  word ":" >> (word . Esc.bytes . Esc.bash) msg
     Bang t                  ->  hangWord "!" >> binGrp t >> outdent
-    AndAnd t t' | simple t  ->  pp t     >> word "&&" >> nl >> pp t'
-                | otherwise ->  binGrp t >> word "&&" >> nl >> binGrp t'
-    OrOr t t' | simple t    ->  pp t     >> word "||" >> nl >> pp t'
-              | otherwise   ->  binGrp t >> word "||" >> nl >> binGrp t'
-    Pipe t t' | simple t    ->  pp t     >> word "|"  >> nl >> pp t'
-              | otherwise   ->  binGrp t >> word "|"  >> nl >> binGrp t'
+    AndAnd t t'             ->  if isSimple t && (isSimple t' || isAndAnd t')
+                                then pp t     >> word "&&" >> nl >> pp t'
+                                else binGrp t >> word "&&" >> nl >> binGrp t'
+    OrOr t t'               ->  if isSimple t && (isSimple t' || isOrOr t')
+                                then pp t     >> word "||" >> nl >> pp t'
+                                else binGrp t >> word "||" >> nl >> binGrp t'
+    Pipe t t'               ->  if isSimple t && (isSimple t' || isPipe t')
+                                then pp t     >> word "|"  >> nl >> pp t'
+                                else binGrp t >> word "|"  >> nl >> binGrp t'
     Sequence t t'           ->  pp t     >> nl        >> pp t'
     Background t t'         ->  binGrp t >> word "&"  >> nl >> pp t'
     Group t                 ->  curlyOpen >> pp t     >> curlyClose >> outdent
@@ -180,9 +183,17 @@ trimPrinter LongestLeading   =  "##"
 trimPrinter ShortestTrailing =  "%"
 trimPrinter LongestTrailing  =  "%%"
 
-simple a@(Annotated _ stmt)  =  case stmt of
-  SimpleCommand _ _         ->  True
-  _                         ->  False
+isSimple (Annotated _ (SimpleCommand _ _)) = True
+isSimple _                                 = False
+
+isAndAnd (Annotated _ (AndAnd _ _)) = True
+isAndAnd _                          = False
+
+isOrOr (Annotated _ (OrOr _ _)) = True
+isOrOr _                        = False
+
+isPipe (Annotated _ (Pipe _ _)) = True
+isPipe _                        = False
 
 binGrp a@(Annotated _ stmt)  =  case stmt of
   Bang _                    ->  curlyOpen >> pp a >> curlyClose
