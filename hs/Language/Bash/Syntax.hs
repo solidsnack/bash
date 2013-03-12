@@ -382,4 +382,26 @@ deriving instance (Eq t) => Eq (ConditionalExpression t)
 deriving instance (Ord t) => Ord (ConditionalExpression t)
 deriving instance (Show t) => Show (ConditionalExpression t)
 
+data Assignment t
+  = Var             Identifier          (Expression t)
+  | Array           Identifier          [Expression t]
+  | Dict            Identifier          [(Expression t, Expression t)]
+deriving instance (Eq t) => Eq (Assignment t)
+deriving instance (Ord t) => Ord (Assignment t)
+deriving instance (Show t) => Show (Assignment t)
+instance Functor Assignment where
+  fmap f assign              =  case assign of
+    Var ident expr          ->  Var ident (f' expr)
+    Array ident assigns     ->  Array ident (fmap f' assigns)
+    Dict ident assigns      ->  Dict ident (fmap (f' *** f') assigns)
+   where
+    f'                       =  fmap f
+instance Foldable Assignment where
+  foldMap f assign           =  case assign of
+    Var _ expr              ->  f' expr
+    Array _ assigns         ->  foldMap f' assigns
+    Dict _ assigns          ->  foldMap foldMapPair assigns
+   where
+    f'                       =  foldMap f
+    foldMapPair (x, y)       =  f' x `mappend` f' y
 
