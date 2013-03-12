@@ -125,25 +125,35 @@ instance (Annotation t) => PP (Statement t) where
     Until t t'              ->  do hangWord "until" >> pp t >> outdent >> nl
                                    inword "do" >> pp t' >> outword "done"
 --  BraceBrace _            ->  error "[[ ]]"
-    VarAssign var val       ->  do hang (bytes var `mappend` "=")
+    Assign (Var var val)    ->  do hang (bytes var `mappend` "=")
                                    pp val >> outdent
-    Export var val          ->  do hangcat ["export ", bytes var, "="]
-                                   pp val >> outdent
-    ArrayDecl var exprs     ->  do hangcat ["declare -a ", bytes var, "=("]
-                                   array_pp pp exprs >> word ")"
+    Assign (Array var exps) ->  do hangcat [bytes var, "=("]
+                                   array_pp pp exps >> word ")"
                                    nl >> outdent
-    ArrayUpdate var key val ->  pp (DictUpdate var key val)
-    ArrayAssign var exprs   ->  do hangcat [bytes var, "=("]
-                                   array_pp pp exprs >> word ")"
-                                   nl >> outdent
-    DictDecl var pairs      ->  do hangcat ["declare -A ", bytes var, "=("]
-                                   array_pp keyset pairs >> word ")"
-                                   nl >> outdent
-    DictUpdate var key val  ->  wordcat
-                                [bytes var, "[", bytes key, "]=", bytes val]
-    DictAssign var pairs    ->  do hangcat [bytes var, "=("]
+    Assign (Dict var pairs) ->  do hangcat [bytes var, "=("]
                                    array_pp keyset pairs
                                    nl >> outdent >> word ")"
+    Declare (Var var val)   ->  do hangcat ["declare ", bytes var, "="]
+                                   pp val >> outdent
+    Declare (Array var exps) -> do hangcat ["declare -a ", bytes var, "=("]
+                                   array_pp pp exps >> word ")"
+                                   nl >> outdent
+    Declare (Dict var pairs) -> do hangcat ["declare -A ", bytes var, "=("]
+                                   array_pp keyset pairs >> word ")"
+                                   nl >> outdent
+    Local (Var var val)     ->  do hangcat ["local ", bytes var, "="]
+                                   pp val >> outdent
+    Local (Array var exps)  ->  do hangcat ["local -a ", bytes var, "=("]
+                                   array_pp pp exps >> word ")"
+                                   nl >> outdent
+    Local (Dict var pairs)  ->  do hangcat ["local -A ", bytes var, "=("]
+                                   array_pp keyset pairs >> word ")"
+                                   nl >> outdent
+    Export var val          ->  do hangcat ["export ", bytes var, "="]
+                                   pp val >> outdent
+    ArrayUpdate var key val ->  pp (DictUpdate var key val)
+    DictUpdate var key val  ->  wordcat
+                                [bytes var, "[", bytes key, "]=", bytes val]
     Redirect stmt d fd t    ->  do redirectGrp stmt
                                    word (render_redirect d fd t)
 
