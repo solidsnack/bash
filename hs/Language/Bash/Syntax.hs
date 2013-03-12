@@ -63,14 +63,12 @@ data Statement t
   | While           (Annotated t)       (Annotated t)
   | Until           (Annotated t)       (Annotated t)
 --  BraceBrace      (ConditionalExpression t)
-  | VarAssign       Identifier          (Expression t)
+  | Assign          (Assignment t)
+  | Declare         (Assignment t)
+  | Local           (Assignment t)
   | Export          Identifier          (Expression t)
-  | ArrayDecl       Identifier          [Expression t]
   | ArrayUpdate     Identifier          (Expression t)      (Expression t)
-  | ArrayAssign     Identifier          [Expression t]
-  | DictDecl        Identifier          [(Identifier, Expression t)]
   | DictUpdate      Identifier          (Expression t)      (Expression t)
-  | DictAssign      Identifier          [(Expression t, Expression t)]
   | Redirect        (Annotated t)       Redirection
                     FileDescriptor      (Either (Expression t) FileDescriptor)
 deriving instance (Eq t) => Eq (Statement t)
@@ -97,14 +95,12 @@ instance Functor Statement where
     While ann ann'          ->  While (f' ann) (f' ann')
     Until ann ann'          ->  Until (f' ann) (f' ann')
 --  BraceBrace      (ConditionalExpression t)
-    VarAssign ident expr    ->  VarAssign ident (f' expr)
+    Assign a                ->  Assign (f' a)
+    Declare a               ->  Declare (f' a)
+    Local a                 ->  Local (f' a)
     Export ident expr       ->  Export ident (f' expr)
-    ArrayDecl ident assigns ->  ArrayDecl ident (fmap f' assigns)
     ArrayUpdate ident a b   ->  ArrayUpdate ident (f' a) (f' b)
-    ArrayAssign ident assigns -> ArrayAssign ident (fmap f' assigns)
-    DictDecl ident assigns  ->  DictDecl ident (fmap (id *** f') assigns)
     DictUpdate ident a b    ->  DictUpdate ident (f' a) (f' b)
-    DictAssign ident assigns -> DictAssign ident (fmap (f' *** f') assigns)
     Redirect ann r fd chan  ->  Redirect (f' ann) r fd (fmapExprFD chan)
    where
     f'                       =  fmap f
@@ -131,14 +127,12 @@ instance Foldable Statement where
     While ann ann'          ->  f' ann `mappend` f' ann'
     Until ann ann'          ->  f' ann `mappend` f' ann'
 --  BraceBrace      ConditionalExpression
-    VarAssign _ expr        ->  f' expr
+    Assign a                ->  f' a
+    Declare a               ->  f' a
+    Local a                 ->  f' a
     Export _ expr           ->  f' expr
-    ArrayDecl _ assigns     ->  foldMap f' assigns
     ArrayUpdate _ a b       ->  f' a `mappend` f' b
-    ArrayAssign _ assigns   ->  foldMap f' assigns
-    DictDecl _ assigns      ->  foldMap (f' . snd) assigns
     DictUpdate _ a b        ->  f' a `mappend` f' b
-    DictAssign _ assigns    ->  foldMap foldMapPair assigns
     Redirect ann _ _ chan   ->  f' ann `mappend` foldMapExprFD chan
    where
     f'                       =  foldMap f
