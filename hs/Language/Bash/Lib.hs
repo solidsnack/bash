@@ -21,17 +21,15 @@ cmd expr exprs               =  SimpleCommand expr exprs
     regular expressions, checking for GNU or BSD @sed@. The 'Bool' argument
     determines whether to insert the declaration or not.
  -}
-esed :: (Monoid m) => Identifier -> Bool -> Annotated m
-esed ident d | not d         =  setGNUorBSD
-             | otherwise     =  ann_ (Sequence decl setGNUorBSD)
+esed :: (Monoid m) => Identifier -> Annotated m
+esed ident                   =  setGNUorBSD
  where
-  [sed, fgrep, decl, setr, setE, checkGNU, setGNUorBSD] = fmap ann_
+  [sed, fgrep, setr, setE, checkGNU, setGNUorBSD] = fmap ann_
     [ cmd "sed" ["--version"]
     , cmd "fgrep" ["-q", "GNU"]
-    , ArrayDecl ident []
-    , ArrayAssign ident ["sed", "-r"]
-    , ArrayAssign ident ["sed", "-E"]
-    , Pipe sed fgrep
+    , Assign (Array ident ["sed", "-r"])
+    , Assign (Array ident ["sed", "-E"])
+    , dev_null (Pipe sed fgrep)
     , IfThenElse checkGNU setr setE ]
 
 
@@ -69,6 +67,16 @@ sudo_write                  ::  (Monoid m) => Expression m -> Statement m
 sudo_write path              =  Redirect (ann_ tee) Out 1 (Left "/dev/null")
  where
   tee                        =  SimpleCommand "sudo" ["tee", path]
+
+
+{-| A statement that allows one to redirect output to a file as root. This is
+    what you might expect @sudo echo x > privileged_file@ would do (though
+    that does not actually work).
+ -}
+dev_null                    ::  (Monoid m) => Statement m -> Statement m
+dev_null stmt                =  Redirect (ann_ r2)   Out 1 (Left "/dev/null")
+ where
+  r2                         =  Redirect (ann_ stmt) Out 2 (Left "/dev/null")
 
 
 {-| Annotate a statement with the 0 value of a monoid.
