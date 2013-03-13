@@ -7,7 +7,7 @@
 set -o nounset -o errexit -o pipefail
 
 declare -a esed=()
-if sed --version | fgrep -q GNU &>/dev/null
+if { sed --version | fgrep -q GNU ;} &>/dev/null
 then
   esed=(sed -r)
 else
