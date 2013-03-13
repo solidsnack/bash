@@ -54,7 +54,7 @@ instance (Annotation t) => PP (Expression t) where
   pp QuestionMark            =  word "?"
   pp Tilde                   =  word "~"
   pp (ReadVar var) = (word . quote) (if s == "$!" then "${!}" else s)
-   where -- Need to be careful to avoid history expansion of @"@.
+   where -- Need to be careful to avoid history expansion.
     s                        =  (('$' `cons`) . identpart) var
   pp (ReadVarSafe var)       =  (word . quote . braces0 . identpart) var
   pp (ReadArray ident expr)  =  (word . quote . braces)
