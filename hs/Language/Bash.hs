@@ -21,6 +21,7 @@ module Language.Bash
   , Language.Bash.Syntax.funcName
   , Language.Bash.Syntax.Redirection(..)
   , Language.Bash.Syntax.FileDescriptor(..)
+  , Language.Bash.Syntax.Assignment(..)
   , Language.Bash.PrettyPrinter.PP(..)
   , Language.Bash.PrettyPrinter.bytes
   , Language.Bash.PrettyPrinter.builder
