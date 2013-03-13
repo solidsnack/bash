@@ -109,13 +109,13 @@ instance (Annotation t) => PP (Statement t) where
     Subshell t              ->  roundOpen >> pp t     >> roundClose >> outdent
     Function fname t        ->  do wordcat ["function ", bytes fname]
                                    inword "{" >> pp t >> outword "}"
-    IfThen t t'             ->  do hangWord "if" >> pp t  >> outdent >> nl
-                                   inword "then" >> pp t' >> outword "fi"
-    IfThenElse t t' t''     ->  do hangWord "if" >> pp t >> outdent >> nl
-                                   inword "then"       >> pp t'     >> outdent
-                                   nl
-                                   inword "else"       >> pp t''
-                                   outword "fi"
+    IfThen t t'             ->  do hangWord "if"   >> pp t  >> outdent >> nl
+                                   inword   "then" >> pp t'
+                                   outword  "fi"
+    IfThenElse t t' t''     ->  do hangWord "if"   >> pp t  >> outdent >> nl
+                                   inword   "then" >> pp t' >> outdent >> nl
+                                   inword   "else" >> pp t''
+                                   outword  "fi"
     For var vals t          ->  do hangWord (concat ["for ", bytes var, " in"])
                                    mapM_ breakline vals
                                    outdent >> nl
