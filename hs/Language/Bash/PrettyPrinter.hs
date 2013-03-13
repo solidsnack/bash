@@ -154,6 +154,7 @@ instance (Annotation t) => PP (Statement t) where
                                    nl >> outdent
     Export var val          ->  do hangcat ["export ", bytes var, "="]
                                    pp val >> outdent
+    IsSet var               ->  wordcat ["[[ ${",identpart var,":+true} ]]"]
     ArrayUpdate var key val ->  pp (DictUpdate var key val)
     DictUpdate var key val  ->  wordcat
                                 [bytes var, "[", bytes key, "]=", bytes val]

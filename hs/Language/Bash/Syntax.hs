@@ -67,6 +67,7 @@ data Statement t
   | Declare         (Assignment t)
   | Local           (Assignment t)
   | Export          Identifier          (Expression t)
+  | IsSet           VarName
   | ArrayUpdate     Identifier          (Expression t)      (Expression t)
   | DictUpdate      Identifier          (Expression t)      (Expression t)
   | Redirect        (Annotated t)       Redirection
@@ -99,6 +100,7 @@ instance Functor Statement where
     Declare a               ->  Declare (f' a)
     Local a                 ->  Local (f' a)
     Export ident expr       ->  Export ident (f' expr)
+    IsSet var               ->  IsSet var
     ArrayUpdate ident a b   ->  ArrayUpdate ident (f' a) (f' b)
     DictUpdate ident a b    ->  DictUpdate ident (f' a) (f' b)
     Redirect ann r fd chan  ->  Redirect (f' ann) r fd (fmapExprFD chan)
@@ -131,6 +133,7 @@ instance Foldable Statement where
     Declare a               ->  f' a
     Local a                 ->  f' a
     Export _ expr           ->  f' expr
+    IsSet _                 ->  mempty
     ArrayUpdate _ a b       ->  f' a `mappend` f' b
     DictUpdate _ a b        ->  f' a `mappend` f' b
     Redirect ann _ _ chan   ->  f' ann `mappend` foldMapExprFD chan
