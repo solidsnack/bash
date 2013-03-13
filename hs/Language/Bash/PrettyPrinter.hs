@@ -41,6 +41,9 @@ class PP t where
   pp                        ::  t -> State PPState ()
 instance PP Identifier where
   pp (Identifier b)          =  word b
+instance PP FuncName where
+  pp (Simple ident)          =  pp ident
+  pp (Fancy b)               =  word b
 instance PP SpecialVar where
   pp                         =  word . specialVarBytes
 instance PP FileDescriptor where
@@ -104,7 +107,7 @@ instance (Annotation t) => PP (Statement t) where
     Background t t'         ->  binGrp t >> word "&"  >> nl >> pp t'
     Group t                 ->  curlyOpen >> pp t     >> curlyClose >> outdent
     Subshell t              ->  roundOpen >> pp t     >> roundClose >> outdent
-    Function ident t        ->  do wordcat ["function ", bytes ident]
+    Function fname t        ->  do wordcat ["function ", bytes fname]
                                    inword "{" >> pp t >> outword "}"
     IfThen t t'             ->  do hangWord "if" >> pp t  >> outdent >> nl
                                    inword "then" >> pp t' >> outword "fi"

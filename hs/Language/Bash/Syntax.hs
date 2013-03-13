@@ -11,7 +11,7 @@
  -}
 module Language.Bash.Syntax where
 
-import Prelude hiding (all)
+import Prelude hiding (all, any, elem)
 import Control.Applicative
 import Control.Arrow ((***))
 import Control.Monad
@@ -20,7 +20,7 @@ import Data.String
 import Data.Maybe
 import Data.Word (Word8)
 import Data.ByteString.Char8
-import Data.Foldable hiding (all)
+import Data.Foldable hiding (all, any, elem)
 import Data.Monoid
 
 import qualified Text.ShellEscape as Esc
@@ -55,7 +55,7 @@ data Statement t
   | Background      (Annotated t)       (Annotated t)
   | Group           (Annotated t)
   | Subshell        (Annotated t)
-  | Function        Identifier          (Annotated t)
+  | Function        FuncName            (Annotated t)
   | IfThen          (Annotated t)       (Annotated t)
   | IfThenElse      (Annotated t)       (Annotated t)       (Annotated t)
   | For             Identifier          [Expression t]      (Annotated t)
@@ -87,7 +87,7 @@ instance Functor Statement where
     Background ann ann'     ->  Background (f' ann) (f' ann')
     Group ann               ->  Group (f' ann)
     Subshell ann            ->  Subshell (f' ann)
-    Function ident ann      ->  Function ident (f' ann)
+    Function fname ann      ->  Function fname (f' ann)
     IfThen ann ann'         ->  IfThen (f' ann) (f' ann')
     IfThenElse a a' a''     ->  IfThenElse (f' a) (f' a') (f' a'')
     For ident args ann      ->  For ident (fmap f' args) (f' ann)
@@ -252,6 +252,59 @@ identifier bytes             =  do
  where
   okayTail c                 =  (isAlphaNum c || c == '_') && isAscii c
   okayHead c                 =  (isAlpha c || c == '_') && isAscii c
+
+{-| Bash functions can have surprising names. Once the word containing the
+    name of the function has been identified by the Bash parser, the only
+    constraint as of this writing is that it not be all digits and contain
+    neither quotes nor dollar signs. Thus the following are all callable
+    functions:
+
+ >  function http://duckduckgo.com { curl -sSfL http://duckduckgo.com?q="$1" ;}
+ >  function 123.0 { echo 123.0 ;}
+ >  function + { echo "$@" | sed 's/ / + /g' | bc ;}
+
+    Yet a function name may only be parsed if its surroundings constitute a
+    valid function declaration. So we are not able to declare these functions:
+
+ >  function par()ens { echo '(' "$@" ')' ;}
+ >  function (parens) { echo '(' "$@" ')' ;}
+
+    (The parser thinks the parens are there to separate the function name from
+    the function body.)
+
+    Some functions can be declared but not called. For example:
+
+ >  function for { echo for ;}
+ >  function x=y { echo x is y ;}
+
+    Calling the former results in a syntax error. A call to the latter is
+    parsed as an assignment.
+
+    It is possible to override important builtins with function declarations.
+    For example:
+
+ >  function set { echo Haha! ;}
+ >  function declare { echo Surprise! ;}
+
+    Overall, Bash function names are quite flexible but inconsistent and
+    potentially a cause of grave errors.
+
+ -}
+data FuncName                =  Simple Identifier | Fancy ByteString
+deriving instance Eq FuncName
+deriving instance Ord FuncName
+deriving instance Show FuncName
+instance IsString FuncName where
+  fromString                 =  fromJust . funcName . fromString
+
+{-| Produce a 'FuncName', choosing the 'Simple' constructor if the name is a
+    simple identifier.
+ -}
+funcName                    ::  ByteString -> Maybe FuncName
+funcName bytes               =  (Simple <$> identifier bytes)
+                            <|> Fancy bytes <$ guard (not invalid)
+ where
+  invalid = all isDigit bytes || any (`elem` "()$'\"") bytes
 
 {-| The names of special variables, with otherwise illegal identifiers, are
     represented by this type.
