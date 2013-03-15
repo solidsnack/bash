@@ -10,11 +10,13 @@
  -}
 module Language.Bash.PrettyPrinter where
 
+import Control.Applicative
 import qualified Data.List as List
 import Data.ByteString.Char8
 import Data.Binary.Builder (Builder)
 import Data.Monoid
-import Prelude hiding (concat, length, replicate, lines, drop, null)
+import Prelude hiding ( words, unwords, concat, null
+                      , replicate, lines, drop, length )
 import Control.Monad.State.Strict
 
 import qualified Text.ShellEscape as Esc
@@ -92,7 +94,7 @@ instance (Annotation t) => PP (Statement t) where
                                    mapM_ breakline args
                                    outdent
     NoOp msg | null msg     ->  word ":"
-             | otherwise    ->  word ":" >> (word . Esc.bytes . Esc.bash) msg
+             | otherwise    ->  word ":" >> (word . escapeWords) msg
     Bang t                  ->  hangWord "!" >> binGrp t >> outdent
     AndAnd t t'             ->  if isSimple t && (isSimple t' || isAndAnd t')
                                 then pp t     >> word "&&" >> nl >> pp t'
@@ -249,4 +251,6 @@ inlineEvalPrinter open close ann = do
   pp ann
   word close
   outdent >> outdent
+
+escapeWords s = unwords ((Esc.bytes . Esc.bash) <$> words s)
 
