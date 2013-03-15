@@ -138,7 +138,7 @@ instance (Annotation t) => PP (Statement t) where
     Assign (Dict var pairs) ->  do hangcat [bytes var, "=("]
                                    array_pp keyset pairs
                                    nl >> outdent >> word ")"
-    Declare (Var var val)   ->  do hangcat ["declare ", bytes var, "="]
+    Declare (Var var val)   ->  do hang $ concat ["declare ", bytes var, "="]
                                    pp val >> outdent
     Declare (Array var exps) -> do hangcat ["declare -a ", bytes var, "=("]
                                    array_pp pp exps >> word ")"
@@ -146,7 +146,7 @@ instance (Annotation t) => PP (Statement t) where
     Declare (Dict var pairs) -> do hangcat ["declare -A ", bytes var, "=("]
                                    array_pp keyset pairs >> word ")"
                                    nl >> outdent
-    Local (Var var val)     ->  do hangcat ["local ", bytes var, "="]
+    Local (Var var val)     ->  do hang $ concat ["local ", bytes var, "="]
                                    pp val >> outdent
     Local (Array var exps)  ->  do hangcat ["local -a ", bytes var, "=("]
                                    array_pp pp exps >> word ")"
