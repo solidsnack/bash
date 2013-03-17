@@ -72,6 +72,8 @@ instance (Annotation t) => PP (Expression t) where
   pp (ARGVLength)            =  word "$#"
   pp (Elements ident)        =  (word . quote . braces)
                                 (bytes ident `append` "[@]")
+  pp (ElementsSafe ident)    =  (word . quote . braces_)
+                                (bytes ident `append` "[@]")
   pp (Keys ident)            =  (word . quote . braces)
                                 ('!' `cons` bytes ident `append` "[@]")
   pp (Length ident)          =  (word . quote . braces)
@@ -187,6 +189,8 @@ quote b                      =  cons '"' b `snoc` '"'
 braces b                     =  "${" `append` b `snoc` '}'
 
 braces0 b                    =  "${" `append` b `append` ":-}"
+
+braces_ b                    =  concat ["${", b, ":+${", b, "}}"]
 
 brackets b                   =  cons '[' b `snoc` ']'
 

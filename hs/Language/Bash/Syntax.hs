@@ -157,6 +157,7 @@ data Expression t            =  Literal Esc.Bash
                              |  ARGVElements
                              |  ARGVLength
                              |  Elements Identifier
+                             |  ElementsSafe Identifier
                              |  Keys Identifier
                              |  Length VarName
                              |  Trim Trim VarName (Expression t)
@@ -186,6 +187,7 @@ instance Functor Expression where
     ARGVElements            ->  ARGVElements
     ARGVLength              ->  ARGVLength
     Elements ident          ->  Elements ident
+    ElementsSafe ident      ->  Elements ident
     Keys ident              ->  Keys ident
     Length ident            ->  Length ident
     Trim trim v expr        ->  Trim trim v (fmap f expr)
@@ -208,6 +210,7 @@ instance Foldable Expression where
     ARGVElements            ->  mempty
     ARGVLength              ->  mempty
     Elements _              ->  mempty
+    ElementsSafe _          ->  mempty
     Keys _                  ->  mempty
     Length _                ->  mempty
     Trim _ _ expr           ->  foldMap f expr
