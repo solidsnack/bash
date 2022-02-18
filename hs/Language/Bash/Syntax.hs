@@ -72,6 +72,7 @@ data Statement t
   | DictUpdate      Identifier          (Expression t)      (Expression t)
   | Redirect        (Annotated t)       Redirection
                     FileDescriptor      (Either (Expression t) FileDescriptor)
+  | EvalCommand     [Expression t]
 deriving instance (Eq t) => Eq (Statement t)
 deriving instance (Ord t) => Ord (Statement t)
 deriving instance (Show t) => Show (Statement t)
@@ -104,6 +105,7 @@ instance Functor Statement where
     ArrayUpdate ident a b   ->  ArrayUpdate ident (f' a) (f' b)
     DictUpdate ident a b    ->  DictUpdate ident (f' a) (f' b)
     Redirect ann r fd chan  ->  Redirect (f' ann) r fd (fmapExprFD chan)
+    EvalCommand es          ->  EvalCommand (fmap f' es)
    where
     f'                       =  fmap f
     fmapExprFD (Left expr)   =  Left (f' expr)
@@ -137,6 +139,7 @@ instance Foldable Statement where
     ArrayUpdate _ a b       ->  f' a `mappend` f' b
     DictUpdate _ a b        ->  f' a `mappend` f' b
     Redirect ann _ _ chan   ->  f' ann `mappend` foldMapExprFD chan
+    EvalCommand es          ->  foldMap f' es
    where
     f'                       =  foldMap f
     foldMapExprFD (Left expr) = f' expr
