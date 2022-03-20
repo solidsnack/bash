@@ -22,6 +22,7 @@ import Data.Word (Word8)
 import Data.ByteString.Char8
 import Data.Foldable hiding (all, any, elem)
 import Data.Monoid
+import Numeric.Natural (Natural)
 
 import qualified Text.ShellEscape as Esc
 
@@ -320,6 +321,7 @@ data SpecialVar
                    | DollarBang        | DollarUnderscore
                    | Dollar0 | Dollar1 | Dollar2 | Dollar3 | Dollar4
                    | Dollar5 | Dollar6 | Dollar7 | Dollar8 | Dollar9
+                   | DollarNat Natural
 deriving instance Eq SpecialVar
 deriving instance Ord SpecialVar
 deriving instance Show SpecialVar
@@ -347,21 +349,25 @@ specialVar b | "$?" == b     =  Just DollarQuestion
              | otherwise     =  Nothing
 
 specialVarBytes             ::  SpecialVar -> ByteString
-specialVarBytes DollarQuestion = "$?"
-specialVarBytes DollarHyphen =  "$-"
-specialVarBytes DollarDollar =  "$$"
-specialVarBytes DollarBang   =  "$!"
+specialVarBytes DollarQuestion   = "$?"
+specialVarBytes DollarHyphen     =  "$-"
+specialVarBytes DollarDollar     =  "$$"
+specialVarBytes DollarBang       =  "$!"
 specialVarBytes DollarUnderscore = "$_"
-specialVarBytes Dollar0      =  "$0"
-specialVarBytes Dollar1      =  "$1"
-specialVarBytes Dollar2      =  "$2"
-specialVarBytes Dollar3      =  "$3"
-specialVarBytes Dollar4      =  "$4"
-specialVarBytes Dollar5      =  "$5"
-specialVarBytes Dollar6      =  "$6"
-specialVarBytes Dollar7      =  "$7"
-specialVarBytes Dollar8      =  "$8"
-specialVarBytes Dollar9      =  "$9"
+specialVarBytes Dollar0          =  "$0"
+specialVarBytes Dollar1          =  "$1"
+specialVarBytes Dollar2          =  "$2"
+specialVarBytes Dollar3          =  "$3"
+specialVarBytes Dollar4          =  "$4"
+specialVarBytes Dollar5          =  "$5"
+specialVarBytes Dollar6          =  "$6"
+specialVarBytes Dollar7          =  "$7"
+specialVarBytes Dollar8          =  "$8"
+specialVarBytes Dollar9          =  "$9"
+specialVarBytes (DollarNat i)    =  if i <= 9 then
+                                      "$" <> (pack $ show i)
+                                    else
+                                      "${" <> (pack $ show i) <> "}"
 
 
 data Trim                    =  ShortestLeading  | LongestLeading
@@ -457,4 +463,3 @@ instance Foldable Assignment where
    where
     f'                       =  foldMap f
     foldMapPair (x, y)       =  f' x `mappend` f' y
-
