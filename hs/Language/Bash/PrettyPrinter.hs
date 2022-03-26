@@ -52,6 +52,7 @@ instance PP FileDescriptor where
   pp (FileDescriptor w)      =  (word . pack . show) w
 instance (Annotation t) => PP (Expression t) where
   pp (Literal lit)           =  word (Esc.bytes lit)
+  pp (UnescapedLiteral u)    =  word u
   pp Asterisk                =  word "*"
   pp QuestionMark            =  word "?"
   pp Tilde                   =  word "~"
