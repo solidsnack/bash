@@ -147,6 +147,7 @@ instance Foldable Statement where
     well as eval and process substitution. It is 'Foldable' and a 'Functor'.
  -}
 data Expression t            =  Literal Esc.Bash
+                             |  UnescapedLiteral ByteString
                              |  Asterisk
                              |  QuestionMark
                              |  Tilde
@@ -177,6 +178,7 @@ instance IsString (Expression t) where
 instance Functor Expression where
   fmap f expr                =  case expr of
     Literal esc             ->  Literal esc
+    UnescapedLiteral u      ->  UnescapedLiteral u
     Asterisk                ->  Asterisk
     QuestionMark            ->  QuestionMark
     Tilde                   ->  Tilde
@@ -200,6 +202,7 @@ instance Functor Expression where
 instance Foldable Expression where
   foldMap f expr             =  case expr of
     Literal _               ->  mempty
+    UnescapedLiteral _      ->  mempty
     Asterisk                ->  mempty
     QuestionMark            ->  mempty
     Tilde                   ->  mempty
@@ -457,4 +460,3 @@ instance Foldable Assignment where
    where
     f'                       =  foldMap f
     foldMapPair (x, y)       =  f' x `mappend` f' y
-

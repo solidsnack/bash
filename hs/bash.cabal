@@ -43,3 +43,4 @@ library
                                 Language.Bash.Annotations
                                 Language.Bash.Lib
 
+  ghc-options: -Wincomplete-patterns
