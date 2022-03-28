@@ -22,6 +22,7 @@ import Data.Word (Word8)
 import Data.ByteString.Char8
 import Data.Foldable hiding (all, any, elem)
 import Data.Monoid
+import qualified Data.List.NonEmpty as NE (NonEmpty(..), toList)
 
 import qualified Text.ShellEscape as Esc
 
@@ -38,6 +39,8 @@ instance Functor Annotated where
   fmap f (Annotated t stmt)  =  Annotated (f t) (fmap f stmt)
 instance Foldable Annotated where
   foldMap f (Annotated t stmt) = f t `mappend` foldMap f stmt
+
+type IfThenElifBranch t = (Annotated t, Annotated t)
 
 {-| The 'Statement' type captures the different kind of statements that may
     exist in a Bash statement tree. It is mutually recursive with 'Annotated'.
@@ -58,6 +61,7 @@ data Statement t
   | Function        FuncName            (Annotated t)
   | IfThen          (Annotated t)       (Annotated t)
   | IfThenElse      (Annotated t)       (Annotated t)       (Annotated t)
+  | IfThenElif      (NE.NonEmpty (IfThenElifBranch t))      (Annotated t)
   | For             Identifier          [Expression t]      (Annotated t)
   | Case            (Expression t)      [(Expression t, Annotated t)]
   | While           (Annotated t)       (Annotated t)
@@ -91,6 +95,7 @@ instance Functor Statement where
     Function fname ann      ->  Function fname (f' ann)
     IfThen ann ann'         ->  IfThen (f' ann) (f' ann')
     IfThenElse a a' a''     ->  IfThenElse (f' a) (f' a') (f' a'')
+    IfThenElif a a'         ->  IfThenElif (fmap (f' *** f') a) (f' a')
     For ident args ann      ->  For ident (fmap f' args) (f' ann)
     Case expr cases         ->  Case (f' expr) (fmap (f' *** f') cases)
     While ann ann'          ->  While (f' ann) (f' ann')
@@ -124,6 +129,7 @@ instance Foldable Statement where
     Function _ ann          ->  f' ann
     IfThen ann ann'         ->  f' ann `mappend` f' ann'
     IfThenElse a a' a''     ->  foldMap f' [a, a', a'']
+    IfThenElif a a'         ->  foldMap foldMapPair (NE.toList a) `mappend` f' a'
     For _ args ann          ->  foldMap f' args `mappend` f' ann
     Case expr cases         ->  f' expr `mappend` foldMap foldMapPair cases
     While ann ann'          ->  f' ann `mappend` f' ann'
