@@ -164,6 +164,9 @@ instance (Annotation t) => PP (Statement t) where
                                 [bytes var, "[", bytes key, "]=", bytes val]
     Redirect stmt d fd t    ->  do redirectGrp stmt
                                    word (render_redirect d fd t)
+    EvalCommand es          ->  do hangcat ["eval"]
+                                   _ <- traverse pp es
+                                   outdent
 
 hangcat                      =  hangWord . concat
 
