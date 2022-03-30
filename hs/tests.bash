@@ -29,12 +29,16 @@ function results_filter {
                    }' "$@"
 }
 
+function interpreter {
+  cabal repl
+}
+
 case "${1:-}" in
   commands)     cat "$0" | body | ghci_commands ;;
   ''|tests)     cat "$0" | body ;;
   filter)       results_filter "$@" ;;
-  ghci)         cat "$0" | body | ghci_commands | ghci ;;
-  test)         "$0" ghci 2>/dev/null | results_filter ;;
+  interpret)    cat "$0" | body | ghci_commands | interpreter ;;
+  test)         "$0" interpret 2>/dev/null | results_filter ;;
   *)            echo "Arugment error." 1>&2 ;;
 esac
 
@@ -267,8 +271,8 @@ ls ~root
 #> let readSTRING = ReadVar identSTRING
 #> let readPATTERN0 = ReadArray patterns (literal "leading")
 #> let readPATTERN1 = ReadArray patterns (literal "trailing")
-#> let setSTRING = Annotated () (VarAssign string "ab/cd/ef")
-#> let setPATTERNS = Annotated () (DictDecl patterns [("leading", "ab")])
+#> let setSTRING = Annotated () (Assign $ Var string "ab/cd/ef")
+#> let setPATTERNS = Annotated () (Assign $ Dict patterns [("leading", "ab")])
 #> let setPATTERN1 = Annotated () (DictUpdate patterns "trailing" "ef")
 #> let trimLFixed = Trim ShortestLeading identSTRING readPATTERN0
 #> let trimTFixed = Trim ShortestTrailing identSTRING readPATTERN1
@@ -296,7 +300,7 @@ echo "${string#"${patterns[leading]}"}" "${string%"${patterns[trailing]}"}" \
 #> let echo_ = SimpleCommand "echo"
 #> let echo__ t = Sequence (Annotated () (echo_ [t])) (Annotated () (echo_ [t]))
 #> let echoIO = (redirectO "o" . redirectI "i") (echo_ ["->y"])
-#> let setFOO = VarAssign "foo" (Eval seq4)
+#> let setFOO = Assign $ Var "foo" (Eval seq4)
 #> let c__ = clauseSimple "w" (echo_ ["->w"])
 #> let c2  = clauseSimple "x" ((Bang . Annotated()) (echo__ "->x"))
 #> let cIO = clauseSimple "y" echoIO
@@ -328,7 +332,7 @@ do
 done
 
 #> let (var :: Identifier) = "var"
-#> let setEVAL = Annotated () (VarAssign var (Eval whileStmt))
+#> let setEVAL = Annotated () (Assign $ Var var (Eval whileStmt))
 #> render setEVAL
 var="$( while if $'[' "$RANDOM" -lt 40000 $']' 
               then
@@ -342,7 +346,7 @@ var="$( while if $'[' "$RANDOM" -lt 40000 $']'
 
 #> let (var :: Identifier) = "var"
 #> let evalUnquotedEcho = (EvalUnquoted . Annotated ()) (echo__ "text")
-#> let setEVALUNQUOTED = Annotated () (VarAssign var evalUnquotedEcho)
+#> let setEVALUNQUOTED = Annotated () (Assign $ Var var evalUnquotedEcho)
 #> render setEVALUNQUOTED
 var=$( echo text
        echo text )
