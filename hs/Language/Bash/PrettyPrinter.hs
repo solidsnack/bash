@@ -18,6 +18,7 @@ import Data.Monoid
 import Prelude hiding ( words, unwords, concat, null
                       , replicate, lines, drop, length )
 import Control.Monad.State.Strict
+import qualified Data.List.NonEmpty as NE (head, tail)
 
 import qualified Text.ShellEscape as Esc
 
@@ -120,6 +121,15 @@ instance (Annotation t) => PP (Statement t) where
                                    inword   "then" >> pp t' >> outdent >> nl
                                    inword   "else" >> pp t''
                                    outword  "fi"
+    IfThenElif t t'         ->  do hangWord "if"   >> pp (fst $ NE.head t) >> outdent >> nl
+                                   inword   "then" >> pp (snd $ NE.head t) >> outdent >> nl
+                                   mapM_ elif_clause $ NE.tail t
+                                   inword   "else" >> pp t'
+                                   outword  "fi"
+                                     where
+                                       elif_clause (s, s') = do
+                                         hangWord "elif" >> pp s >> outdent >> nl
+                                         inword   "then" >> pp s' >> outdent >> nl
     For var vals t          ->  do hangWord (concat ["for ", bytes var, " in"])
                                    mapM_ breakline vals
                                    outdent >> nl
@@ -260,4 +270,3 @@ inlineEvalPrinter open close ann = do
   outdent >> outdent
 
 escapeWords s = unwords ((Esc.bytes . Esc.bash) <$> words s)
-
